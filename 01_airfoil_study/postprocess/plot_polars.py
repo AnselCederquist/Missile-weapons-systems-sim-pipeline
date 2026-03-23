@@ -11,19 +11,43 @@ import os
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'results', 'data')
 FIG_DIR  = os.path.join(os.path.dirname(__file__), '..', 'results', 'figures')
 
-# Dictionary mapping display names to their exported XFLR5 data filenames
-# Key   = label that will appear in plot legends
-# Value = filename in results/data/
-AIRFOILS = {
-    'NACA 0006': 'NACA 0006_T1_Re0.500_M0.30_N9.0.txt',   # thinnest — lowest drag, weakest structure
-    'NACA 0008': 'NACA 0008_T1_Re0.500_M0.30_N9.0.txt',   # thin — good drag/structure tradeoff
-    'NACA 0012': 'NACA 0012_T1_Re0.500_M0.30_N9.0.txt',   # standard — most documented airfoil in history
-    'NACA 0015': 'NACA 0015_T1_Re0.500_M0.30_N9.0.txt',   # thickest — most structural depth, highest drag
-}
+# All airfoils, Reynolds numbers, and Mach numbers to analyze
+AIRFOIL_NAMES = ['NACA 0006', 'NACA 0008', 'NACA 0012', 'NACA 0015']
+RE_VALUES     = [0.500, 1.000, 2.000]   # in millions (e.g. 0.500 = Re 500,000)
+MACH_VALUES   = [0.30, 0.50]
+
+# Build the full file list automatically from all combinations
+AIRFOILS = {}
+for foil in AIRFOIL_NAMES:
+    for re in RE_VALUES:
+        for mach in MACH_VALUES:
+            label    = f"{foil} Re={re:.3f}M M={mach:.2f}"
+            filename = f"{foil}_T1_Re{re:.3f}_M{mach:.2f}_N9.0.txt"
+            AIRFOILS[label] = filename
 
 # Plot colors for each airfoil — one color per airfoil, consistent across all plots
 # Using hex codes for precise control over appearance
 COLORS = ['#e63946', '#f4a261', '#2a9d8f', '#457b9d']
+
+# CD threshold below which data is considered unreliable (e.g. NACA 0006 at low Re)
+# XFLR5 sometimes reports CD=0 when it cannot resolve the boundary layer on thin airfoils
+# Filtering these out prevents divide-by-zero and inf values in L/D calculations
+CD_MIN = 0.001
+
+
+# ── Helper: compute valid L/D ─────────────────────────────────────────────────
+def compute_ld(df):
+    """
+    Compute lift-to-drag ratio, filtering out rows where CD is unreliably small.
+    Returns a filtered DataFrame and the corresponding L/D Series.
+
+    Filtering CD < CD_MIN removes:
+      - NACA 0006 zero-CD artifacts at low Reynolds number
+      - Any other unphysical zero-drag points from unconverged solutions
+    """
+    df_valid = df[df['CD'] > CD_MIN].copy()
+    ld = df_valid['CL'] / df_valid['CD']
+    return df_valid, ld
 
 
 # ── Parser ─────────────────────────────────────────────────────────────────────
@@ -101,7 +125,7 @@ for name, filename in AIRFOILS.items():
         print(f"Warning: could not load {name}: {e}")
 
 
-# ── Plot 1: CL vs alpha (Lift Curve) ──────────────────────────────────────────
+# ── Plot 1: CL vs Alpha (Lift Curve) ──────────────────────────────────────────
 # The lift curve shows how lift coefficient (CL) increases with angle of attack (alpha)
 # Key features to observe:
 #   - Linear region: CL increases linearly from ~-10 to ~10 degrees
@@ -114,15 +138,15 @@ for (name, df), color in zip(polars.items(), COLORS):
 
 ax.set_xlabel('Angle of Attack α (deg)', fontsize=12)
 ax.set_ylabel('Lift Coefficient CL', fontsize=12)
-ax.set_title('CL vs α — NACA Thickness Comparison\nRe=500,000, M=0.3', fontsize=13)
+ax.set_title('CL vs α — NACA Thickness Comparison\nAll Re and Mach conditions', fontsize=13)
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3)
 ax.axhline(0, color='white', linewidth=0.5)   # zero-lift reference line
 ax.axvline(0, color='white', linewidth=0.5)   # zero-AoA reference line
 plt.tight_layout()
-plt.savefig(os.path.join(FIG_DIR, 'CL_vs_da_comparison.png'), dpi=150)
+plt.savefig(os.path.join(FIG_DIR, 'CL_vs_Alpha_all.png'), dpi=150)
 plt.show()
-print("Saved: CL_vs_alpha_comparison.png")
+print("Saved: CL_vs_Alpha_all.png")
 
 
 # ── Plot 2: Drag Polar (CL vs CD) ─────────────────────────────────────────────
@@ -139,16 +163,16 @@ for (name, df), color in zip(polars.items(), COLORS):
 
 ax.set_xlabel('Drag Coefficient CD', fontsize=12)
 ax.set_ylabel('Lift Coefficient CL', fontsize=12)
-ax.set_title('Drag Polar — NACA Thickness Comparison\nRe=500,000, M=0.3', fontsize=13)
+ax.set_title('Drag Polar — NACA Thickness Comparison\nAll Re and Mach conditions', fontsize=13)
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(os.path.join(FIG_DIR, 'drag_polar_comparison.png'), dpi=150)
+plt.savefig(os.path.join(FIG_DIR, 'drag_polar_all.png'), dpi=150)
 plt.show()
-print("Saved: drag_polar_comparison.png")
+print("Saved: drag_polar_all.png")
 
 
-# ── Plot 3: L/D vs alpha (Aerodynamic Efficiency) ────────────────────────────
+# ── Plot 3: L/D vs Alpha (Aerodynamic Efficiency) ────────────────────────────
 # Lift-to-Drag ratio (L/D) is the single best measure of aerodynamic efficiency
 # Higher L/D = more lift generated per unit of drag = more efficient
 # For a missile canard:
@@ -156,22 +180,24 @@ print("Saved: drag_polar_comparison.png")
 #   - Higher peak L/D = less drag penalty for a given maneuver demand
 #   - Thinner airfoils generally have higher peak L/D at low AoA
 # Note: L/D is undefined at AoA=0 for symmetric airfoils (CL=0, so 0/CD = 0)
+# Note: CD values below CD_MIN are filtered out to remove NACA 0006 zero-CD artifacts
 fig, ax = plt.subplots(figsize=(8, 6))
 for (name, df), color in zip(polars.items(), COLORS):
-    # Compute L/D ratio point by point — dividing lift by drag at each alpha
-    ld = df['CL'] / df['CD']
-    ax.plot(df['alpha'], ld, label=name, color=color, linewidth=2)
+    # Filter unreliable low-CD points before computing L/D
+    df_valid, ld = compute_ld(df)
+    ax.plot(df_valid['alpha'], ld, label=name, color=color, linewidth=2)
 
 ax.set_xlabel('Angle of Attack α (deg)', fontsize=12)
 ax.set_ylabel('Lift-to-Drag Ratio L/D', fontsize=12)
-ax.set_title('L/D vs α — NACA Thickness Comparison\nRe=500,000, M=0.3', fontsize=13)
+ax.set_title('L/D vs α — NACA Thickness Comparison\nAll Re and Mach conditions', fontsize=13)
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3)
 ax.set_xlim(-5, 15)   # crop x-axis to the useful operating range
+ax.set_ylim(-5, 100)  # cap y-axis to prevent inf values distorting the plot
 plt.tight_layout()
-plt.savefig(os.path.join(FIG_DIR, 'LD_vs_alpha_comparison.png'), dpi=150)
+plt.savefig(os.path.join(FIG_DIR, 'LD_vs_Alpha_all.png'), dpi=150)
 plt.show()
-print("Saved: LD_vs_alpha_comparison.png")
+print("Saved: LD_vs_Alpha_all.png")
 
 
 # ── Summary Table ─────────────────────────────────────────────────────────────
@@ -184,8 +210,8 @@ print("Saved: LD_vs_alpha_comparison.png")
 #   Max L/D     — peak lift-to-drag ratio (best efficiency point)
 #   CD @ CL=0.5 — drag at a representative cruise/maneuvering lift condition
 print("\n── Airfoil Summary ───────────────────────────────")
-print(f"{'Airfoil':<12} {'CLmax':>8} {'Stall AoA':>10} {'Max L/D':>10} {'CD @ CL=0.5':>12}")
-print("-" * 56)
+print(f"{'Polar':<35} {'CLmax':>8} {'Stall AoA':>10} {'Max L/D':>10} {'CD@CL=0.5':>10}")
+print("-" * 75)
 for name, df in polars.items():
     # Find maximum CL value across all analyzed angles of attack
     cl_max = df['CL'].max()
@@ -193,13 +219,74 @@ for name, df in polars.items():
     # Find the angle of attack at which CLmax occurs (stall onset)
     stall_aoa = df.loc[df['CL'].idxmax(), 'alpha']
 
-    # Compute L/D at every point and find the maximum
-    ld = df['CL'] / df['CD']
-    max_ld = ld.max()
+    # Filter out zero-CD rows, then find peak L/D
+    df_valid, ld = compute_ld(df)
+    max_ld = ld.max() if len(ld) > 0 else float('nan')
 
     # Find the data point where CL is closest to 0.5 (representative maneuver condition)
     # then read off the drag coefficient at that point
     idx = (df['CL'] - 0.5).abs().idxmin()
     cd_at_cl05 = df.loc[idx, 'CD']
 
-    print(f"{name:<12} {cl_max:>8.3f} {stall_aoa:>10.1f} {max_ld:>10.1f} {cd_at_cl05:>12.4f}")
+    print(f"{name:<35} {cl_max:>8.3f} {stall_aoa:>10.1f} {max_ld:>10.1f} {cd_at_cl05:>10.4f}")
+
+
+# ── Focused plots: one per Mach number, all airfoils, all Re ─────────────────
+# This produces cleaner comparison plots by fixing Mach and varying Re
+# Shows how each airfoil's performance scales with Reynolds number
+# Color = airfoil family, linestyle = Reynolds number
+
+for mach in MACH_VALUES:
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig.suptitle(f'NACA Airfoil Comparison — Mach {mach:.2f}', fontsize=14)
+
+    # One color per airfoil, one linestyle per Re
+    foil_colors   = {'NACA 0006': '#e63946', 'NACA 0008': '#f4a261',
+                     'NACA 0012': '#2a9d8f', 'NACA 0015': '#457b9d'}
+    re_linestyles = {0.500: '-', 1.000: '--', 2.000: ':'}
+    re_labels     = {0.500: 'Re=500k', 1.000: 'Re=1M', 2.000: 'Re=2M'}
+
+    for foil in AIRFOIL_NAMES:
+        for re in RE_VALUES:
+            label = f"{foil} Re={re:.3f}M M={mach:.2f}"
+            if label not in polars:
+                continue
+            df           = polars[label]
+            color        = foil_colors[foil]
+            ls           = re_linestyles[re]
+            legend_label = f"{foil} {re_labels[re]}"
+
+            # CL vs Alpha — all data points valid
+            axes[0].plot(df['alpha'], df['CL'], color=color,
+                         linestyle=ls, linewidth=1.5, label=legend_label)
+
+            # Drag polar — all data points valid
+            axes[1].plot(df['CD'], df['CL'], color=color,
+                         linestyle=ls, linewidth=1.5, label=legend_label)
+
+            # L/D vs Alpha — filter zero-CD rows before computing
+            df_valid, ld = compute_ld(df)
+            axes[2].plot(df_valid['alpha'], ld, color=color,
+                         linestyle=ls, linewidth=1.5, label=legend_label)
+
+    axes[0].set_xlabel('Alpha (deg)'); axes[0].set_ylabel('CL')
+    axes[0].set_title('CL vs Alpha');  axes[0].grid(True, alpha=0.3)
+
+    axes[1].set_xlabel('CD');          axes[1].set_ylabel('CL')
+    axes[1].set_title('Drag Polar');   axes[1].grid(True, alpha=0.3)
+
+    axes[2].set_xlabel('Alpha (deg)'); axes[2].set_ylabel('L/D')
+    axes[2].set_title('L/D vs Alpha'); axes[2].grid(True, alpha=0.3)
+    axes[2].set_xlim(-5, 15)
+    axes[2].set_ylim(-5, 100)          # cap y-axis to prevent inf distorting plot
+
+    # Single legend for the whole figure
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=6,
+               fontsize=8, bbox_to_anchor=(0.5, -0.05))
+
+    plt.tight_layout()
+    fname = f'comparison_M{str(mach).replace(".", "")}_all_airfoils.png'
+    plt.savefig(os.path.join(FIG_DIR, fname), dpi=150, bbox_inches='tight')
+    plt.show()
+    print(f"Saved: {fname}")
