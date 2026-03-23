@@ -137,7 +137,14 @@ weapons-systems-sim-pipeline/
 Parametric aerodynamic analysis of NACA airfoil series using XFLR5/XFOIL across a sweep of Reynolds numbers and angles of attack. Cl/Cd polar optimization for UAV cruise and missile canard applications.
 
 **Tools:** XFLR5, Python (Matplotlib)  
-**Key result:** *[e.g. "NACA 0012 selected — 18% higher L/D at Mach 0.4 vs. NACA 2412 for symmetric missile canard application"]*
+**Key result:** NACA 0012 selected — CLmax 1.08, stall at 11°, L/D 60.4; best tradeoff between aerodynamic efficiency and structural depth for missile canard application. NACA 0006 data unreliable at Re=500k (zero CD values indicate unresolved boundary layer).
+
+| Airfoil | CLmax | Stall AoA | Max L/D | CD @ CL=0.5 |
+|---|---|---|---|---|
+| NACA 0006 | — | — | — | — |
+| NACA 0008 | 0.82 | 8° | 48.8 | 0.0101 |
+| NACA 0012 | 1.08 | 11° | 60.4 | 0.0094 |
+| NACA 0015 | 1.16 | 13° | 63.1 | 0.0100 |
 
 ---
 
