@@ -1,0 +1,11 @@
+/COM,ANSYS RELEASE 2026 R1           BUILD 26.1      UP20260202       21:21:20
+
+ *** WARNING ***                         ELAPSED TIME =       5.411   TIME= 21:21:22
+ Element shape checking is currently inactive.  Issue SHPP,ON or         
+ SHPP,WARN to reactivate, if desired.                                    
+
+ *** WARNING ***                         ELAPSED TIME =       5.520   TIME= 21:21:22
+ It has been detected that you are using reduced integration brick       
+ elements along with the PCG solver (EQSLV,PCG).  Please verify that     
+ you have multiple elements through the thickness in your model or       
+ switch to the SPARSE solver (EQSLV,SPARSE).                             
