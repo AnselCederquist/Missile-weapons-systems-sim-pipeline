@@ -1,11 +1,11 @@
-/COM,ANSYS RELEASE 2026 R1           BUILD 26.1      UP20260202       19:04:54
+/COM,ANSYS RELEASE 2026 R1           BUILD 26.1      UP20260202       21:21:20
 
- *** FATAL ***                           ELAPSED TIME =       5.339   TIME= 19:04:55
- The version size limits( NODES )have been exceeded.                     
-  Contact your Ansys support person for more information.                
+ *** WARNING ***                         ELAPSED TIME =       5.411   TIME= 21:21:22
+ Element shape checking is currently inactive.  Issue SHPP,ON or         
+ SHPP,WARN to reactivate, if desired.                                    
 
- ************************************************************************
- The above error is non-recoverable by ANSYS                             
-  ANSYS run terminated by the indicated error                            
-  Current data base saved if possible.                                   
- ************************************************************************
+ *** WARNING ***                         ELAPSED TIME =       5.520   TIME= 21:21:22
+ It has been detected that you are using reduced integration brick       
+ elements along with the PCG solver (EQSLV,PCG).  Please verify that     
+ you have multiple elements through the thickness in your model or       
+ switch to the SPARSE solver (EQSLV,SPARSE).                             

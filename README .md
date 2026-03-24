@@ -179,24 +179,41 @@ Richardson extrapolation and GCI analysis.
 **Tools:** Creo Parametric 12.4, Ansys Mechanical (Student), Python (NumPy, 
 Matplotlib, Pandas)
 
-**Methodology:** Global mesh refinement across five levels (3.0 → 0.85mm, 
-960 → 124,018 elements) within Ansys Student 128k node limit. Fixed support BC 
-singularity identified at outer root tab corners and excluded from convergence 
-reporting. True stress concentration identified at negative-X inner fillet 
-(R3 radius, fin-to-tab transition) — location stabilized spatially with mesh 
-refinement confirming a real geometric stress concentration rather than a 
-numerical artifact. At coarser mesh levels the maximum non-singularity stress 
-initially appeared on the positive-X inner fillet before migrating and 
-stabilizing at the negative-X fillet with further refinement.
+**Methodology:** **Methodology:** Global mesh refinement across five levels (3.0 → 0.85mm, 
+960 → 124,018 elements) within Ansys Student 128k node limit. Fixed support 
+BC singularity identified at outer root tab corners and excluded from 
+convergence reporting. True stress concentration identified at negative-X 
+inner fillet (R3 radius, fin-to-tab transition) — location stabilized 
+spatially with mesh refinement confirming a real geometric stress concentration 
+rather than a numerical artifact. At coarser mesh levels the maximum 
+non-singularity stress initially appeared on the positive-X inner fillet before 
+migrating and stabilizing at the negative-X fillet with further refinement.
 
-Richardson extrapolation was applied to total deformation (GCI < 0.001%, 
-fully converged). Richardson extrapolation for Von Mises stress was invalid 
-due to non-monotonic convergence (1.532 → 1.382 → 1.289 → 1.336 → 1.378 MPa) 
-— attributed to low-quality elements near the fillet. Stress reported as mean 
-± 1σ of finest three mesh levels. Local mesh refinement (Sphere of Influence 
-or Face Sizing on fillet surfaces) is recommended for future studies — would 
-reduce total element count by ~90% while achieving equivalent resolution at 
-the critical zone.
+Richardson extrapolation was applied to total deformation (GCI < 0.001%, fully 
+converged). Richardson extrapolation for Von Mises stress was invalid due to 
+non-monotonic convergence (1.532 → 1.382 → 1.289 → 1.336 → 1.378 MPa) — 
+attributed to low-quality elements near the fillet. Stress reported as mean ± 
+1σ of finest three mesh levels. 
+
+Persistent low-quality elements identified at the tab-to-fin geometric 
+transition zone due to the abrupt cross-section change from rectangular root 
+tab to tapered fin profile. This meshing artifact persisted across all attempted 
+mesh control strategies including global element size refinement (3.0 → 0.85mm), 
+Face Sizing applied directly to fillet surfaces, Sphere of Influence centered on 
+the fillet region, and Hex Dominant and Sweep automatic meshing methods. The 
+low-quality elements are concentrated along the two short Z-direction edges at 
+the tab-fin junction — the 4mm thickness edges where the flat tab end face meets 
+the R3 fillet surface on both positive-X and negative-X sides, creating an 
+abrupt 90° surface normal transition the hex sweep mesher cannot resolve cleanly.
+
+Future work: apply a small chamfer (1-2mm) in Creo Parametric along these two 
+Z-direction edges at the tab-fin junction. This would smooth the surface normal 
+transition and allow the hex sweep mesher to generate higher quality elements 
+through the transition volume without significantly altering structural geometry 
+or stress results. Additionally, local mesh refinement (Face Sizing or Sphere of 
+Influence on fillet surfaces) is recommended over global refinement for future 
+studies — would reduce total element count by ~90% while achieving equivalent 
+resolution at the critical zone.
 
 **Key result:** Max Von Mises stress 1.334 ± 0.036 MPa at inner root fillet — 
 safety factor 660× vs Ti-6Al-4V yield (880 MPa). Total deformation converged 
