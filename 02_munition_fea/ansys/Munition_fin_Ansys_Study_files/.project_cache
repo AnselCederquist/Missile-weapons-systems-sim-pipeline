@@ -4,7 +4,11 @@ dp0/SYS/ENGD/EngineeringData.xml
 dp0/SYS/ENGD/material.engd
 dp0/SYS/MECH/CAERep.xml
 dp0/SYS/MECH/ds.dat
+dp0/SYS/MECH/file.aapresults
+dp0/SYS/MECH/file.mntr
+dp0/SYS/MECH/file.rst
 dp0/SYS/MECH/file0.err
+dp0/SYS/MECH/file0.PCS
 dp0/SYS/MECH/MatML.xml
 dp0/SYS/MECH/solve.out
 dp0/act.dat
