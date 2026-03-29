@@ -4,8 +4,7 @@
 [LinkedIn](https://www.linkedin.com/in/ansel-cederquist-154080375/) · [Email](mailto:anselcederquist@outlook.com)
 
 \---
-
-> \*\*One-paragraph summary for recruiters:\*\*  
+ 
 > Full weapons system simulation pipeline: aerodynamic coefficient database generated via Ansys Fluent CFD across Mach 0.8–3.0 → fed into a 6-DOF flight mechanics simulator with Proportional Navigation guidance → validated with Extended Kalman Filter state estimation across 500 Monte Carlo engagement scenarios. Structural and thermo-structural analysis of munition components conducted in Ansys Mechanical under high-g setback and sustained burn conditions.
 
 \---
@@ -295,7 +294,6 @@ High-g setback            Sustained burn conditions
 
 \---
 
-## Resume Bullet (Copy-Paste Ready)
 
 **For defense / weapons engineer applications:**
 
