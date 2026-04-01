@@ -4,8 +4,9 @@
 [LinkedIn](https://www.linkedin.com/in/ansel-cederquist-154080375/) · [Email](mailto:anselcederquist@outlook.com)
 
 \---
- 
-> Full weapons system simulation pipeline: aerodynamic coefficient database generated via Ansys Fluent CFD across Mach 0.8–3.0 → fed into a 6-DOF flight mechanics simulator with Proportional Navigation guidance → validated with Extended Kalman Filter state estimation across 500 Monte Carlo engagement scenarios. Structural and thermo-structural analysis of munition components conducted in Ansys Mechanical under high-g setback and sustained burn conditions.
+
+> \*\*One-paragraph summary\*\*  
+> Full weapons system simulation pipeline: aerodynamic coefficient database generated via Ansys Fluent CFD across Mach 0.8–3.0 → fed into a 6-DOF flight mechanics simulator with Proportional Navigation guidance → validated with Extended Kalman Filter state estimation across 500 Monte Carlo engagement scenarios. Compressible nozzle CFD (De Laval, density-based Fluent, isentropic validation + mesh convergence) and thermo-structural analysis of munition components conducted in Ansys Mechanical under high-g setback and sustained burn conditions.
 
 \---
 
@@ -40,19 +41,24 @@ weapons-systems-sim-pipeline/
 │   └── report/
 │       └── munition\_fea.pdf
 │
-├── 03\_nozzle\_cfd/                  # Project 3 — Nozzle/Inlet CFD Analysis
+├── 03_nozzle_cfd/                  # Project 3 — Nozzle CFD Analysis
 │   ├── README.md
 │   ├── cad/
-│   │   └── nozzle\_profile.step
+│   │   ├── nozzle_study.stp
+│   │   ├── Nozzle_study_2d_conical.step
+│   │   ├── Nozzle_study_2d_conical_axisymmetric.step
+│   │   ├── Nozzle_study_3d_conical.step
+│   │   └── Nozzle_3d_conical_PlumeAnalysis.x_t
 │   ├── ansys/
-│   │   └── nozzle.wbpj             # Ansys Fluent project (density-based, compressible)
+│   │   └── Nozzle_2d.wbpj          # All 4 studies (FFF, FFF-1, FFF-2, FFF-3)
 │   ├── postprocess/
-│   │   ├── mesh\_convergence.py
-│   │   └── validate\_isentropic.py  # Compare CFD vs. isentropic relations
+│   │   ├── mesh_convergence.py     # Richardson extrapolation + GCI
+│   │   └── validate_isentropic.py  # CFD vs isentropic theory
 │   ├── results/
-│   │   └── figures/                # Mach contours, pressure plots
+│   │   └── figures/                # Contours, centerline plots, convergence plots
 │   └── report/
-│       └── nozzle\_cfd.pdf
+│       └── nozzle_cfd.pdf
+│
 │
 ├── 04\_missile\_aero\_database/       # Project 4 — Missile CFD Aerodynamic Database
 │   ├── README.md
@@ -222,12 +228,14 @@ future work.
 
 \---
 
+
 ### 03 · Nozzle CFD Analysis
 
-Compressible flow simulation of a De Laval nozzle in Ansys Fluent (density-based, coupled solver). Mach number and pressure distributions validated against isentropic flow relations. 3-level mesh convergence with Richardson extrapolation.
+Compressible flow simulation of a conical De Laval nozzle (Ae/A* = 16.67) in Ansys Fluent across four mesh refinement levels. Mach number and pressure distributions validated against isentropic flow relations. Supplemented by hot-fire exhaust plume study at representative rocket chamber conditions (P₀ = 9.8 MPa, T₀ = 3710 K).
 
-**Tools:** Solid Edge, Ansys Meshing, Ansys Fluent, Ansys CFD-Post, Python  
-**Key result:** *\[e.g. "Throat Mach number = 1.003 vs. theoretical 1.0 — 0.3% error; exit pressure recovery within 1.1% of isentropic prediction"]*
+**Tools:** Onshape, Ansys Fluent (density-based and pressure-based coupled, compressible), Ansys Meshing, Python (NumPy, Matplotlib, SciPy)
+
+**Key result:** Exit Mach Richardson-extrapolated to 2.745 (GCI < 0.5%, grid-independent); throat Mach 0.829 (GCI 4.1%); mass flow conservation 0.010% on fine mesh. Cold flow centerline Mach matches isentropic theory within ±3% in convergent section; systematic divergent-section underprediction (6–12%) consistent with viscous losses. Hot-fire plume (P₀ = 9.8 MPa, T₀ = 3710 K) confirms fully started nozzle at chamber conditions with supersonic exhaust structure.
 
 \---
 
