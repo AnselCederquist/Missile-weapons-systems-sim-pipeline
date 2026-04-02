@@ -140,129 +140,19 @@ weapons-systems-sim-pipeline/
 
 Parametric aerodynamic analysis of NACA airfoil series using XFLR5/XFOIL across a sweep of Reynolds numbers and angles of attack. Cl/Cd polar optimization for missile canard application.
 
-**Tools:** XFLR5, Python (NumPy, Pandas, Matplotlib)  
-**Key result:** NACA 0012 selected for missile canard — CLmax 1.08 at stall AoA 11°, L/D 60.4 at Re=500k M=0.3. Parametric study across 4 airfoils (NACA 0006/0008/0012/0015), 3 Reynolds numbers (500k/1M/2M), and 2 Mach numbers (0.3/0.5) — 24 total polar sweeps. NACA 0006 data unreliable at Re=500k (unresolved boundary layer). Thicker airfoils show higher CLmax and later stall; NACA 0012 optimal tradeoff between aerodynamic efficiency and structural depth for fin application.
+**Tools:** XFLR5, Python (NumPy, Pandas, Matplotlib)
 
-### Airfoil Summary
-| Polar                      | CLmax | Stall AoA | Max L/D | CD@CL=0.5 |
-| -------------------------- | ----- | --------- | ------- | --------- |
-| NACA 0006 Re=0.500M M=0.30 | 0.695 | 7.0       | 42.9    | 0.0138    |
-| NACA 0006 Re=0.500M M=0.50 | 0.643 | 5.5       | 41.6    | 0.0145    |
-| NACA 0006 Re=1.000M M=0.30 | 0.618 | 5.5       | 51.7    | 0.0104    |
-| NACA 0006 Re=1.000M M=0.50 | 0.650 | 5.5       | 49.6    | 0.0115    |
-| NACA 0006 Re=2.000M M=0.30 | 0.728 | 10.0      | 63.2    | 0.0075    |
-| NACA 0006 Re=2.000M M=0.50 | 0.626 | 5.0       | 63.5    | 0.0074    |
-| NACA 0008 Re=0.500M M=0.30 | 0.822 | 8.0       | 48.8    | 0.0101    |
-| NACA 0008 Re=0.500M M=0.50 | 0.751 | 6.5       | 47.9    | 0.0103    |
-| NACA 0008 Re=1.000M M=0.30 | 0.908 | 20.0      | 61.8    | 0.0084    |
-| NACA 0008 Re=1.000M M=0.50 | 0.781 | 6.5       | 59.9    | 0.0085    |
-| NACA 0008 Re=2.000M M=0.30 | 0.947 | 8.5       | 76.7    | 0.0071    |
-| NACA 0008 Re=2.000M M=0.50 | 0.816 | 6.5       | 73.5    | 0.0076    |
-| NACA 0012 Re=0.500M M=0.30 | 1.077 | 11.0      | 60.4    | 0.0094    |
-| NACA 0012 Re=0.500M M=0.50 | 0.936 | 8.5       | 56.9    | 0.0105    |
-| NACA 0012 Re=1.000M M=0.30 | 1.219 | 12.5      | 73.5    | 0.0083    |
-| NACA 0012 Re=1.000M M=0.50 | 1.020 | 8.5       | 68.1    | 0.0084    |
-| NACA 0012 Re=2.000M M=0.30 | 1.355 | 13.0      | 88.4    | 0.0072    |
-| NACA 0012 Re=2.000M M=0.50 | 1.104 | 9.0       | 82.3    | 0.0074    |
-| NACA 0015 Re=0.500M M=0.30 | 1.155 | 13.0      | 63.1    | 0.0100    |
-| NACA 0015 Re=0.500M M=0.50 | 0.997 | 10.0      | 55.2    | 0.0104    |
-| NACA 0015 Re=1.000M M=0.30 | 1.290 | 14.0      | 75.0    | 0.0082    |
-| NACA 0015 Re=1.000M M=0.50 | 1.106 | 10.0      | 67.7    | 0.0086    |
-| NACA 0015 Re=2.000M M=0.30 | 1.449 | 15.5      | 88.9    | 0.0073    |
-| NACA 0015 Re=2.000M M=0.50 | 1.224 | 11.0      | 82.9    | 0.0077    |
-
-#### Limitations and Validity Bounds
-
-**Mach number validity.** XFLR5 applies a Prandtl-Glauert (P-G) compressibility correction to panel method results. P-G is a linearized correction valid only in the subsonic regime — it begins to break down above approximately M=0.3–0.4 and fails entirely at transonic and supersonic conditions. The M=0.5 sweep cases in this study are at the margin of P-G validity and should be treated as approximate. Results at M=0.3 are more reliable. No transonic or supersonic aerodynamics can be extracted from XFLR5.
-
-**2D vs 3D effects.** All polars are 2D (infinite-span) results. Real fin aerodynamics include finite-span corrections, tip vortex losses, and body-fin interference that reduce effective L/D substantially relative to 2D predictions. The L/D = 60.4 reported for NACA 0012 at Re=500k, M=0.3 is a 2D upper bound, not a fin-level estimate.
-
-**Scope of this study.** The XFLR5 analysis is valid for the low-speed/launch phase of the flight envelope only (M < 0.4). Transonic and supersonic aerodynamics — which govern the majority of the flight profile for this vehicle — are handled in Project 04 via Digital DATCOM and Barrowman cross-validation, where compressible and shock-dominated flow effects are properly accounted for.
-
-**Summary table — validity by Mach number:**
-
-| Mach | Tool validity | Notes |
-|------|--------------|-------|
-| 0.3  | Valid (low-speed subsonic) | P-G correction within acceptable range |
-| 0.5  | Marginal | P-G linearization near breakdown; results approximate |
-| >0.7 | Not valid | Transonic regime requires different methods (DATCOM, CFD) |
-| >1.0 | Not valid | Supersonic: shock-expansion theory or CFD required |
+**Key result:** NACA 0012 selected for missile canard — CLmax 1.08 at stall AoA 11°, L/D 60.4 at Re=500k M=0.3. Parametric study across 4 airfoils (NACA 0006/0008/0012/0015), 3 Reynolds numbers (500k/1M/2M), and 2 Mach numbers (0.3/0.5) — 24 total polar sweeps. NACA 0006 data unreliable at Re=500k (unresolved boundary layer). Results valid for subsonic regime (M < 0.4); Prandtl-Glauert correction applied — M=0.5 cases are approximate. Full polar table and validity discussion in project README.
 
 ---
 
 ### 02 · Structural FEA — Munition Component
 
-Static structural FEA of a Ti-6Al-4V missile fin assembly under 10,000g axial 
-setback load in Ansys Mechanical. Five-level mesh convergence study with 
-Richardson extrapolation and GCI analysis.
+Static structural FEA of a Ti-6Al-4V missile fin assembly under 10,000g axial setback load in Ansys Mechanical. Five-level mesh convergence study with Richardson extrapolation and GCI analysis.
 
-**Tools:** Creo Parametric 12.4, Ansys Mechanical (Student), Python (NumPy, 
-Matplotlib, Pandas)
+**Tools:** Creo Parametric 12.4, Ansys Mechanical (Student), Python (NumPy, Matplotlib, Pandas)
 
-**Methodology:**  Global mesh refinement across five levels (3.0 → 0.85mm, 
-960 → 124,018 elements) within Ansys Student 128k node limit. Fixed support 
-BC singularity identified at outer root tab corners and excluded from 
-convergence reporting. True stress concentration identified at negative-X 
-inner fillet (R3 radius, fin-to-tab transition) — location stabilized 
-spatially with mesh refinement confirming a real geometric stress concentration 
-rather than a numerical artifact. At coarser mesh levels the maximum 
-non-singularity stress initially appeared on the positive-X inner fillet before 
-migrating and stabilizing at the negative-X fillet with further refinement.
-
-Richardson extrapolation was applied to total deformation (GCI < 0.001%, fully 
-converged). Richardson extrapolation for Von Mises stress was invalid due to 
-non-monotonic convergence (1.532 → 1.382 → 1.289 → 1.336 → 1.378 MPa) — 
-attributed to low-quality elements near the fillet. Stress reported as mean ± 
-1σ of finest three mesh levels. 
-
-Persistent low-quality elements identified at the tab-to-fin geometric 
-transition zone due to the abrupt cross-section change from rectangular root 
-tab to tapered fin profile. This meshing artifact persisted across all attempted 
-mesh control strategies including global element size refinement (3.0 → 0.85mm), 
-Face Sizing applied directly to fillet surfaces, Sphere of Influence centered on 
-the fillet region, and Hex Dominant and Sweep automatic meshing methods. The 
-low-quality elements are concentrated along the two short Z-direction edges at 
-the tab-fin junction — the 4mm thickness edges where the flat tab end face meets 
-the R3 fillet surface on both positive-X and negative-X sides, creating an 
-abrupt 90° surface normal transition the hex sweep mesher cannot resolve cleanly.
-
-Future work: apply a small chamfer (1-2mm) in Creo Parametric along these two 
-Z-direction edges at the tab-fin junction. This would smooth the surface normal 
-transition and allow the hex sweep mesher to generate higher quality elements 
-through the transition volume without significantly altering structural geometry 
-or stress results. Additionally, local mesh refinement (Face Sizing or Sphere of 
-Influence on fillet surfaces) is recommended over global refinement for future 
-studies — would reduce total element count by ~90% while achieving equivalent 
-resolution at the critical zone.
-
-#### Safety Factor Discussion — Why 660x is Physically Plausible
-
-The FEA reports a safety factor of approximately 660x against Ti-6Al-4V yield strength (~880 MPa annealed). This is not a modeling error. The following explains why.
-
-**Load case.** The 10,000g axial setback load is a pure compressive load applied along the fin's longitudinal axis, simulating the acceleration phase at motor ignition. This is a worst-case inertial load, not an aerodynamic bending load.
-
-**Geometry.** The fin is a solid machined tapered trapezoidal section — not sheet metal. The cross-sectional area at the root tab is large relative to the applied force. Under pure axial compression, stress = F/A. For a 100g Ti-6Al-4V fin under 10,000g: F ~= 9,810 N. Root cross-section area ~= 600-1000 mm^2. Resulting stress ~= 10-16 MPa. Against 880 MPa yield, margin of ~55-90x from this simplified estimate alone. The FEA-reported stress at the critical fillet is in the same order of magnitude, yielding 660x at the max stress node.
-
-**What this load case does NOT capture.** A 660x margin against a single axial load case does not mean the fin is 660x over-designed. The following loading scenarios were outside the scope of this study and would drive the structural design in practice:
-
-- Lateral aerodynamic loading at high dynamic pressure and AoA (typically the sizing load case for fins)
-- Combined axial + bending under the setback load with simultaneous aerodynamic side load
-- Flutter and aeroelastic instability at transonic and supersonic speeds
-- Thermal stress from aerodynamic heating at M > 2
-- Fatigue from vibro-acoustic loading during motor burn
-
-**Bottom line.** The 660x margin is physically consistent with a solid Ti-6Al-4V fin under a pure compressive setback load. It reflects the limited scope of the load case, not an error in the model. A complete structural qualification would require the combined loading cases above.
-
-#### Stress Convergence Note
-
-Deformation converges monotonically across all five mesh levels (GCI < 0.001%, Richardson extrapolated value: 1.363 um). Stress does not converge monotonically due to low-quality elements at the tab-fin junction edges. Stress is therefore reported as mean +/- 1-sigma of the three finest mesh levels rather than via Richardson extrapolation. Deformation is the primary convergence metric for this study. Stress results should be treated as bounded estimates, not converged values. A higher-quality mesh at the junction fillets (requiring element sizing outside the 128k node student license limit) would be needed for a converged stress result.
-
-**Key result:** Max Von Mises stress 1.334 ± 0.036 MPa at inner root fillet — 
-safety factor 660× vs Ti-6Al-4V yield (880 MPa). Total deformation converged 
-to 1.363 μm (GCI < 0.001%). Fin geometry significantly overdesigned for this 
-load case — weight optimization via geometry reduction is recommended as 
-future work.
-
+**Key result:** Max Von Mises stress 1.334 ± 0.036 MPa at inner root fillet (mean ± 1σ of finest three mesh levels — stress non-monotonic due to low-quality elements at tab-fin junction; Richardson extrapolation invalid for stress). Safety factor 660× vs Ti-6Al-4V yield (880 MPa). Total deformation Richardson-extrapolated to 1.363 μm (GCI < 0.001%, fully converged). Fixed support singularity identified and excluded from convergence reporting. Full methodology, convergence analysis, and safety factor justification in project README.
 ---
 
 
