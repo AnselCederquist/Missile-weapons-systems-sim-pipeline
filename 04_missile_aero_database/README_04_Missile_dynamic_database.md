@@ -35,10 +35,6 @@ DATCOM $WGPLNF treats fins as a single equivalent wing; Barrowman applies
 explicit 4-fin body interference (K_f = 1.25). Barrowman used as primary
 subsonic normal force estimate.
 
-### Spot-Check - Ansys Fluent (pending)
-
-One or two Fluent cases at representative supersonic Mach/AoA as high-fidelity validation.
-
 ### Interpolation Module
 
 DATCOM output parsed via fixed-width parser. aero_interpolator.py wraps scipy.interpolate.RegularGridInterpolator to provide CL(M,a), CM(M,a), CD(M,a) as callable functions imported by Project 06.
