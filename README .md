@@ -5,7 +5,7 @@
 
 ---
 
-> Full weapons system simulation pipeline (in progress): compressible nozzle CFD (De Laval, density-based Fluent, isentropic validation + mesh convergence) and static structural FEA of a Ti-6Al-4V fin assembly under 10,000g setback load completed. Aerodynamic coefficient database (Project 04), 6-DOF flight mechanics simulator with Proportional Navigation guidance (Project 06), Extended Kalman Filter state estimation (Project 05), and thermo-structural rocket motor casing analysis (Project 07) in progress.
+> > Full weapons system simulation pipeline (in progress): NACA airfoil aerodynamic study (XFLR5, 24-polar parametric sweep), Ti-6Al-4V fin assembly structural FEA under 10,000g setback (Ansys Mechanical, Richardson extrapolation, GCI), and De Laval nozzle compressible CFD (density-based Fluent, isentropic validation, mesh convergence) completed. Aerodynamic coefficient database (Project 04), 6-DOF flight mechanics simulator with Proportional Navigation guidance (Project 06), Extended Kalman Filter state estimation (Project 05), and thermo-structural rocket motor casing analysis (Project 07) in progress.
 
 ---
 
