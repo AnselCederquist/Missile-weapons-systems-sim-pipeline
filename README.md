@@ -59,20 +59,21 @@ weapons-systems-sim-pipeline/
 │       └── nozzle_cfd.pdf
 │
 │
-├── 04_missile_aero_database/       # Project 4 — Missile CFD Aerodynamic Database
-│   ├── README.md
-│   ├── cad/
-│   │   └── missile_body.step       # Ogive-cylinder-fin geometry
+├── 04_missile_aero_database/       # Project 4 -- Missile Aerodynamic Database
+│   │   ├── README_04_Missile_aero_database.md
+│   ├── datcom/
+│   │   ├── missile.dcm             # DATCOM input -- conical nose, cylinder, 4-fin
+│   │   └── datcom.out              # DATCOM raw output
 │   ├── ansys/
-│   │   └── missile_aero.wbpj       # Ansys Fluent project — parametric sweep setup
+│   │   └── missile_spotcheck.wbpj  # Fluent spot-check cases (pending)
 │   ├── postprocess/
-│   │   ├── extract_coefficients.py # Parse Fluent reports → CL, CD, Cm tables
-│   │   └── plot_aero_database.py   # 3D surface plots, coefficient curves
+│   │   ├── parse_datcom.py         # Fixed-width parser, handles NDM/NaN/overflow
+│   │   ├── aero_interpolator.py    # SciPy RegularGridInterpolator -- feeds 6-DOF
+│   │   ├── barrowman.py            # Subsonic CNa cross-validation (pending)
+│   │   └── plot_aero_database.py   # Coefficient curves (pending)
 │   ├── results/
-│   │   ├── aero_database.csv       # Full coefficient table — feeds 6-DOF sim
+│   │   ├── aero_database.csv       # Parsed coefficient table (pending)
 │   │   └── figures/
-│   └── report/
-│       └── missile_aero_database.pdf
 │
 ├── 05_kalman_filter/               # Project 5 — Extended Kalman Filter Target Tracker
 │   ├── README.md
@@ -167,16 +168,17 @@ Compressible flow simulation of a conical De Laval nozzle (Ae/A* = 16.67) in Ans
 
 ---
 
-### 04 · Missile Aerodynamic Database (CFD)
+### 04 · Missile Aerodynamic Database
 
-Full aerodynamic coefficient database (CL, CD, Cm, CN) for a generic ogive-cylinder-fin missile body generated via Ansys Fluent across Mach 0.8–3.0 and AoA 0°–20°. Database directly feeds the 6-DOF simulator.
+Full aerodynamic coefficient database (CL, CD, CM) for a conical-nose / cylindrical-body / trapezoidal-fin missile across Mach 0.8-3.0 and AoA 0-20 deg. Digital DATCOM primary method consistent with industry preliminary design practice. Barrowman subsonic cross-validation (pending). Ansys Fluent spot-checks at representative Mach/AoA (pending). Database packaged as a SciPy interpolation module feeding directly into the Project 06 6-DOF simulator.
 
-**Tools:** Solid Edge, Ansys Meshing, Ansys Fluent, Ansys CFD-Post, Python  
-**Key result:** In progress.
+**Tools:** Digital DATCOM, Python (NumPy, SciPy), Ansys Fluent (spot-check, pending)
 
+**Key result:** DATCOM sweep complete. CL(alpha) at M=0.8-1.2, CM(alpha) at M=1.6-3.0. Interpolation module operational. CN/CA absent due to DATCOM method coverage limits for low-AR fins at supersonic Mach -- documented limitation.
 
 
 ---
+
 
 ### 05 · Extended Kalman Filter — Target Tracker
 

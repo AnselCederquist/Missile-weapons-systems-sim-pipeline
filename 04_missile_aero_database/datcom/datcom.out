@@ -1,0 +1,292 @@
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION
+ IS RELEASED "AS IS".  THE U.S. GOVERNMENT MAKES NO
+ WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, CONCERNING
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION,
+ INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ IN NO EVENT WILL THE U.S. GOVERNMENT BE LIABLE FOR ANY
+ DAMAGES, INCLUDING LOST PROFITS, LOST SAVINGS OR OTHER
+ INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE 
+ USE, OR INABILITY TO USE, THIS SOFTWARE OR ANY
+ ACCOMPANYING DOCUMENTATION, EVEN IF INFORMED IN ADVANCE
+ OF THE POSSIBILITY OF SUCH DAMAGES.
+  ****************************************************
+  *    USAF STABILITY AND CONTROL  DIGITAL DATCOM    *
+  *    PROGRAM REV. JAN 96   DIRECT INQUIRIES TO:    *
+  *    WRIGHT LABORATORY  (WL/FIGC)  ATTN: W. BLAKE  *
+  *      WRIGHT PATTERSON AFB, OHIO  45433           *
+  *    PHONE (513) 255-6764,   FAX (513) 258-4054    *
+  ****************************************************
+ Preparing to start the big loop
+ At 1000
+1                         CONERR - INPUT ERROR CHECKING
+0 ERROR CODES - N* DENOTES THE NUMBER OF OCCURENCES OF EACH ERROR
+0 A - UNKNOWN VARIABLE NAME
+0 B - MISSING EQUAL SIGN FOLLOWING VARIABLE NAME
+0 C - NON-ARRAY VARIABLE HAS AN ARRAY ELEMENT DESIGNATION - (N)
+0 D - NON-ARRAY VARIABLE HAS MULTIPLE VALUES ASSIGNED
+0 E - ASSIGNED VALUES EXCEED ARRAY DIMENSION
+0 F - SYNTAX ERROR
+
+0******************************  INPUT DATA CARDS  ******************************
+
+  $FLTCON NMACH=5.0,MACH(1)=0.8,1.2,1.6,2.0,3.0,                                 
+          NALPHA=6.0,ALSCHD(1)=0.0,4.0,8.0,12.0,16.0,20.0,                       
+          ALT(1)=0.0,0.0,0.0,0.0,0.0$                                            
+  $OPTINS SREF=0.0845,CBARR=0.328$                                               
+  $SYNTHS XCG=1.640,ZCG=0.0,XW=2.625,ZW=0.0$                                     
+  $BODY NX=3.0,                                                                  
+        X(1)=0.0,0.492,3.281,                                                    
+        R(1)=0.0,0.164,0.164$                                                    
+  $WGPLNF CHRDR=0.262,CHRDTP=0.131,                                              
+          SSPN=0.656,SSPNE=0.492,                                                
+          SAVSI=45.0,CHSTAT=0.0,TWISTA=0.0$                                      
+  $WGSCHR TOVC=0.05,XOVC=0.5,DELTAY=0.492,CLI=0.0,ALPHAI=0.0,                    
+          CLALPA(1)=0.110,CLMAX(1)=1.0,CMO=0.0,LERI=0.001,CLAMO=0.110$           
+  NEXT CASE                                                                         ** ERROR ** NO NAMELIST NAME FOLLOWING $ 
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+  $FLTCON NMACH=5.0,MACH(1)=0.8,1.2,1.6,2.0,3.0,                                 
+          NALPHA=6.0,ALSCHD(1)=0.0,4.0,8.0,12.0,16.0,20.0,                       
+          ALT(1)=0.0,0.0,0.0,0.0,0.0$                                            
+  $OPTINS SREF=0.0845,CBARR=0.328$                                               
+  $SYNTHS XCG=1.640,ZCG=0.0,XW=2.625,ZW=0.0$                                     
+  $BODY NX=3.0,                                                                  
+        X(1)=0.0,0.492,3.281,                                                    
+        R(1)=0.0,0.164,0.164$                                                    
+  $WGPLNF CHRDR=0.262,CHRDTP=0.131,                                              
+          SSPN=0.656,SSPNE=0.492,                                                
+          SAVSI=45.0,CHSTAT=0.0,TWISTA=0.0$                                      
+  $WGSCHR TOVC=0.05,XOVC=0.5,DELTAY=0.492,CLI=0.0,ALPHAI=0.0,                    
+          CLALPA(1)=0.110,CLMAX(1)=1.0,CMO=0.0,LERI=0.001,CLAMO=0.110$           
+  NEXT CASE                                                                      
+0 INPUT DIMENSIONS ARE IN FT, SCALE FACTOR IS 1.0000
+
+ Return to main program from M01O01
+ Return to main program from M50O62
+ Return to main program from M02O02
+ Return to main program from M51O63
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                       WING-BODY CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 0.800       0.00     893.06   2.1162E+03     518.670     5.6546E+06             0.084      0.328     1.312     1.640     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+    0.0    0.236    0.000     NDM     0.000    0.236   -3.438    2.428E-01   -8.348E-01   -2.461E-02   -5.348E-02   -7.287E-34
+    4.0             0.971                                        2.428E-01                                          -3.730E-03
+    8.0             1.942                                        2.428E-01                                          -7.460E-03
+   12.0             2.914                                        2.428E-01                                          -1.119E-02
+   16.0             3.885                                        2.428E-01                                          -1.492E-02
+   20.0             4.856                                        2.428E-01                                          -1.865E-02
+0*** NDM PRINTED WHEN NO DATCOM METHODS EXIST
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 0.800       0.00     893.06   2.1162E+03     518.670     5.6546E+06             0.084      0.328     1.312     1.640     0.000
+
+
+                                                       BASIC BODY PROPERTIES
+
+            WETTED AREA      XCG     ZCG     BASE AREA     ZERO LIFT DRAG   BASE DRAG   FRICTION DRAG   PRESSURE DRAG
+             0.3123E+01     1.64    0.00       0.0845        0.2164E+00    0.1095E+00    0.9858E-01      0.8375E-02
+
+
+                                         XCG RELATIVE TO THEORETICAL LEADING EDGE MAC=  -1.28
+
+
+                                                       BASIC PLANFORM PROPERTIES
+
+                                    TAPER     ASPECT   QUARTER CHORD             QUARTER CHORD              ZERO LIFT    FRICTION
+                         AREA       RATIO      RATIO       SWEEP        MAC        X(MAC)       Y(MAC)        DRAG     COEFFICIENT
+0      WING
+   TOTAL THEORITICAL
++                     0.2578E+00    0.500    0.6677E+01    43.533    0.204E+00    0.297E+01    0.292E+00                       
+       TOTAL EXPOSED
++                     0.1772E+00    0.571    0.5463E+01    43.533    0.185E+00    0.306E+01    0.388E+00    0.194E-01    0.436E-02
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 0.800       0.00     893.06   2.1162E+03     518.670     5.6546E+06             0.084      0.328     1.312     1.640     0.000
+0          CLA-B(W)= 2.769E-02     CLA-W(B)= 1.905E-01     K-B(W)= 1.758E-01     K-W(B)= 1.210E+00     XAC/C-B(W)= 5.953E-01
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 0.800       0.00     893.06   2.1162E+03     518.670     5.6546E+06             0.084      0.328     1.312     1.640     0.000
+
+
+                                                      *** WING DATA FAIRING ***
+                                       CDL/CL**2 = 0.1716E+00     CLB/CL =-0.6961E-02
+            FORCE BREAK MACH NUMBER (ZERO SWEEP) = 0.9010E+00     FORCE BREAK MACH NUMBER (WITH SWEEP) = 0.9353E+00
+                      MACH(A) = 1.005     CLA(A) = 0.1667E+00     MACH(B) = 1.075     CLA(B) = 0.1656E+00
+                                                (CLB/CL)M=0.6 =-0.5150E-02     (CLB/CL)M=1.4 =-0.7069E-02
+
+                                                  LIFT-CURVE-SLOPE INTERPOLATION TABLE
+                                                      MACH               CL-ALPHA
+                                                     0.750               0.1495E+00
+                                                     0.935               0.1845E+00
+                                                     1.005               0.1667E+00
+                                                     1.075               0.1656E+00
+                                                     1.400               0.1410E+00
+
+
+                                                   *** WING-BODY DATA FAIRING ***
+            CLB/CL =-0.3841E-02     (CLB/CL)MFB =-0.1718E-02     (CLB/CL)M=1.4 = 0.1000E-29     (CNA)M=1.4 = 0.1908E+00
+1
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                       WING-BODY CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 1.200       0.00    1339.59   2.1162E+03     518.670     8.4819E+06             0.084      0.328     1.312     1.640     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+    0.0    0.429    0.000     NDM     0.000    0.429   -4.082    2.267E-01   -9.254E-01   -8.203E-03   -5.627E-02   -2.133E-34
+    4.0             0.907                                        2.267E-01                                          -1.012E-03
+    8.0             1.813                                        2.267E-01                                          -2.023E-03
+   12.0             2.720                                        2.267E-01                                          -3.035E-03
+   16.0             3.627                                        2.267E-01                                          -4.047E-03
+   20.0             4.533                                        2.267E-01                                          -5.058E-03
+0*** NDM PRINTED WHEN NO DATCOM METHODS EXIST
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 1.200       0.00    1339.59   2.1162E+03     518.670     8.4819E+06             0.084      0.328     1.312     1.640     0.000
+
+
+                                                       BASIC BODY PROPERTIES
+
+            WETTED AREA      XCG     ZCG     BASE AREA     ZERO LIFT DRAG   BASE DRAG   FRICTION DRAG   PRESSURE DRAG
+             0.3123E+01     1.64    0.00       0.0845        0.3967E+00    0.2235E+00    0.9323E-01     -0.1888E-08
+
+
+                                         XCG RELATIVE TO THEORETICAL LEADING EDGE MAC=  -1.28
+
+
+                                                       BASIC PLANFORM PROPERTIES
+
+                                    TAPER     ASPECT   QUARTER CHORD             QUARTER CHORD              ZERO LIFT    FRICTION
+                         AREA       RATIO      RATIO       SWEEP        MAC        X(MAC)       Y(MAC)        DRAG     COEFFICIENT
+0      WING
+   TOTAL THEORITICAL
++                     0.2578E+00    0.500    0.6677E+01    43.533    0.204E+00    0.297E+01    0.292E+00                       
+       TOTAL EXPOSED
++                     0.1772E+00    0.571    0.5463E+01    43.533    0.185E+00    0.306E+01    0.388E+00    0.319E-01    0.436E-02
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 1.200       0.00    1339.59   2.1162E+03     518.670     8.4819E+06             0.084      0.328     1.312     1.640     0.000
+0          CLA-B(W)= 2.651E-02     CLA-W(B)= 1.920E-01     K-B(W)= 1.671E-01     K-W(B)= 1.210E+00     XAC/C-B(W)= 7.439E-01
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                             CONFIGURATION AUXILIARY AND PARTIAL OUTPUT
+                                                       WING-BODY CONFIGURATION
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 1.200       0.00    1339.59   2.1162E+03     518.670     8.4819E+06             0.084      0.328     1.312     1.640     0.000
+
+
+                                                      *** WING DATA FAIRING ***
+                                       CDL/CL**2 = 0.3063E+00     CLB/CL =-0.8326E-02
+            FORCE BREAK MACH NUMBER (ZERO SWEEP) = 0.9010E+00     FORCE BREAK MACH NUMBER (WITH SWEEP) = 0.9353E+00
+                      MACH(A) = 1.005     CLA(A) = 0.1667E+00     MACH(B) = 1.075     CLA(B) = 0.1656E+00
+                                                (CLB/CL)M=0.6 =-0.5150E-02     (CLB/CL)M=1.4 =-0.7069E-02
+
+                                                  LIFT-CURVE-SLOPE INTERPOLATION TABLE
+                                                      MACH               CL-ALPHA
+                                                     0.750               0.1495E+00
+                                                     0.935               0.1845E+00
+                                                     1.005               0.1667E+00
+                                                     1.075               0.1656E+00
+                                                     1.400               0.1410E+00
+
+
+                                                   *** WING-BODY DATA FAIRING ***
+            CLB/CL =-0.1116E-02     (CLB/CL)MFB =-0.1718E-02     (CLB/CL)M=1.4 = 0.1000E-29     (CNA)M=1.4 = 0.1908E+00
+1
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                       WING-BODY CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 1.600       0.00    1786.12   2.1162E+03     518.670     1.1309E+07             0.084      0.328     1.312     1.640     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+    0.0      NaN      NaN   -0.0000     NaN      NaN      NaN    1.607E-01   -7.236E-01   -0.000E+00   -5.824E-02   -5.490E-34
+    4.0      NaN      NaN   -2.9193     NaN      NaN      NaN          NaN                                          -2.606E-03
+    8.0      NaN      NaN   -5.8332     NaN      NaN      NaN          NaN                                          -5.158E-03
+   12.0      NaN      NaN   -8.6723     NaN      NaN      NaN          NaN                                          -7.592E-03
+   16.0      NaN      NaN   *******     NaN      NaN      NaN          NaN                                          -9.830E-03
+   20.0      NaN      NaN   *******     NaN      NaN      NaN          NaN                                          -1.178E-02
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                       WING-BODY CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 2.000       0.00    2232.65   2.1162E+03     518.670     1.4136E+07             0.084      0.328     1.312     1.640     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+    0.0      NaN      NaN   -0.0000     NaN      NaN      NaN    1.162E-01   -5.222E-01   -0.000E+00   -5.978E-02   -2.309E-34
+    4.0      NaN      NaN   -2.1286     NaN      NaN      NaN          NaN                                          -1.344E-03
+    8.0      NaN      NaN   -4.3549     NaN      NaN      NaN          NaN                                          -2.715E-03
+   12.0      NaN      NaN   -6.7439     NaN      NaN      NaN          NaN                                          -4.147E-03
+   16.0      NaN      NaN   -9.3914     NaN      NaN      NaN          NaN                                          -5.679E-03
+   20.0      NaN      NaN   *******     NaN      NaN      NaN          NaN                                          -7.530E-03
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                       WING-BODY CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0 3.000       0.00    3348.98   2.1162E+03     518.670     2.1205E+07             0.084      0.328     1.312     1.640     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+    0.0      NaN      NaN   -0.0000     NaN      NaN      NaN    6.808E-02   -3.061E-01   -0.000E+00   -6.257E-02   -3.025E-35
+    4.0      NaN      NaN   -1.2637     NaN      NaN      NaN          NaN                                          -5.389E-04
+    8.0      NaN      NaN   -2.6301     NaN      NaN      NaN          NaN                                          -1.095E-03
+   12.0      NaN      NaN   -4.1899     NaN      NaN      NaN          NaN                                          -1.689E-03
+   16.0      NaN      NaN   -6.0114     NaN      NaN      NaN          NaN                                          -2.340E-03
+   20.0      NaN      NaN   -8.0110     NaN      NaN      NaN          NaN                                          -3.062E-03
+ Return to main program from M57O71
+1 END OF JOB.
