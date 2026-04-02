@@ -153,6 +153,7 @@ Static structural FEA of a Ti-6Al-4V missile fin assembly under 10,000g axial se
 **Tools:** Creo Parametric 12.4, Ansys Mechanical (Student), Python (NumPy, Matplotlib, Pandas)
 
 **Key result:** Max Von Mises stress 1.334 ± 0.036 MPa at inner root fillet (mean ± 1σ of finest three mesh levels — stress non-monotonic due to low-quality elements at tab-fin junction; Richardson extrapolation invalid for stress). Safety factor 660× vs Ti-6Al-4V yield (880 MPa). Total deformation Richardson-extrapolated to 1.363 μm (GCI < 0.001%, fully converged). Fixed support singularity identified and excluded from convergence reporting. Full methodology, convergence analysis, and safety factor justification in project README.
+
 ---
 
 
