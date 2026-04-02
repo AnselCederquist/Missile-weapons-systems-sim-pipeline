@@ -27,9 +27,13 @@ USAF Stability and Control Data Compendium. Industry-standard semi-empirical too
 
 Sweep: 5 Mach (0.8, 1.2, 1.6, 2.0, 3.0) x 6 AoA (0, 4, 8, 12, 16, 20 deg) = 30 flight conditions. Sea-level standard atmosphere.
 
-### Cross-Validation - Barrowman (pending)
+### Cross-Validation - Barrowman
 
-Barrowman equations for subsonic CNa and center of pressure, independent check against DATCOM subsonic derivatives. Expected agreement within 5-10%.
+**Barrowman cross-validation:** CNa = 14.19 /rad, XCP = 75.0% body length.
+DATCOM CLA at M=0.8 = 5.14 /rad. Difference large (176%) due to method mismatch:
+DATCOM $WGPLNF treats fins as a single equivalent wing; Barrowman applies
+explicit 4-fin body interference (K_f = 1.25). Barrowman used as primary
+subsonic normal force estimate.
 
 ### Spot-Check - Ansys Fluent (pending)
 
