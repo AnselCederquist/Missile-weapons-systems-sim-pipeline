@@ -1,6 +1,3 @@
-Prompt — Project 01 README
-Create the file 01_airfoil_study/README.md with the following content exactly:
-
 # Project 01 — Airfoil Aerodynamic Study
 
 Parametric aerodynamic analysis of four NACA symmetric airfoil profiles using
