@@ -8,6 +8,10 @@ Richardson Extrapolation + GCI Analysis
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
+from pathlib import Path
+
+FIG_DIR = Path(__file__).parent.parent / 'results' / 'figures'
+FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Mesh Data ────────────────────────────────────────────────────────────────
 # Columns: label, element_size, nodes, elements, throat_mach, exit_mach,
@@ -163,6 +167,6 @@ ax.xaxis.set_minor_locator(AutoMinorLocator())
 ax.grid(True, alpha=0.3, which="both")
 
 plt.tight_layout()
-plt.savefig("mesh_convergence_results.png", dpi=150, bbox_inches="tight")
+plt.savefig(FIG_DIR / "mesh_convergence_results.png", dpi=150, bbox_inches="tight")
 plt.show()
-print("\nFigure saved: mesh_convergence_results.png")
+print(f"\nFigure saved: {FIG_DIR / 'mesh_convergence_results.png'}")

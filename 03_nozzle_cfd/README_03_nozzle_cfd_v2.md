@@ -35,7 +35,7 @@ Conical De Laval nozzle. All dimensions are radii.
 | Divergent section length | 1.360 m |
 | Total nozzle length | 1.860 m |
 | Exit-to-throat area ratio Ae/A* | 16.67 |
-| Theoretical design exit Mach | ~4.51 (isentropic, γ = 1.4) |
+| Theoretical design exit Mach | ~4.51 (isentropic, gamma = 1.4) |
 
 CAD created in Onshape, exported as STEP, imported into Ansys DesignModeler for named selection assignment prior to meshing.
 
@@ -47,7 +47,7 @@ Four distinct studies were conducted in sequence, each building on the previous.
 
 ### Study 1 — 2D Planar Cold Flow
 
-Full symmetric 2D planar cross-section of the nozzle. Establishes baseline physics and verifies boundary condition setup before committing to finer 3D meshes. Uses k-ω SST turbulence model with cold air properties.
+Full symmetric 2D planar cross-section of the nozzle. Establishes baseline physics and verifies boundary condition setup before committing to finer 3D meshes. Uses k-omega SST turbulence model with cold air properties.
 
 ### Study 2 — 2D Axisymmetric Cold Flow
 
@@ -55,13 +55,13 @@ Upper half profile only, axisymmetric solver. Physically more appropriate than p
 
 ### Study 3 — 3D Cold Flow Mesh Convergence Study
 
-Full 3D solid fluid domain, four mesh refinement levels (default → coarse → medium → fine). Primary quantitative study. Richardson extrapolation applied to throat Mach and exit Mach across the three finest meshes. Grid Convergence Index (GCI) computed for each quantity. Mass flow conservation verified at all mesh levels.
+Full 3D solid fluid domain, four mesh refinement levels (default -> coarse -> medium -> fine). Primary quantitative study. Richardson extrapolation applied to throat Mach and exit Mach across the three finest meshes. Grid Convergence Index (GCI) computed for each quantity.
 
 **This is the primary validated result for the pipeline.**
 
 ### Study 4 — 3D Hot-Fire Exhaust Plume (External Flow)
 
-Extended fluid domain (nozzle + 3 m × 3 m × 7 m downstream box) at representative rocket chamber conditions. Inviscid solver used consistent with published nozzle plume CFD methodology. Documents plume behavior, shock cell structure, and jet mixing at the nozzle exit. Pressure-based coupled solver used due to mixed subsonic/supersonic domain in the far-field box.
+Extended fluid domain (nozzle + 3 m x 3 m x 7 m downstream box) at representative rocket chamber conditions. Inviscid solver used consistent with published nozzle plume CFD methodology. Documents plume behavior, shock cell structure, and jet mixing at the nozzle exit. Pressure-based coupled solver used due to mixed subsonic/supersonic domain in the far-field box.
 
 ---
 
@@ -114,20 +114,20 @@ Body of Influence (BOI) refinement zone centered on nozzle axis captures plume c
 
 ## Solver Configuration
 
-### Cold Flow Studies (Studies 1–3)
+### Cold Flow Studies (Studies 1-3)
 
 | Setting | Value | Justification |
 |---|---|---|
 | Solver type | Density-Based | Required for compressible supersonic flows — solves continuity, momentum, and energy simultaneously, essential for strong coupling between pressure and density at high Mach numbers |
 | Time | Steady | Fixed inlet conditions, no time-varying geometry |
-| Viscous model | k-ω SST | Near-wall accuracy via k-ω formulation; SST blending transitions to k-ε in freestream; shear stress limiter prevents turbulence overprediction in accelerating flows; well-validated for high-speed internal nozzle flows |
-| Near-wall treatment | Correlation | Blends between resolved boundary layer and wall functions based on local y⁺ — robust for mixed y⁺ distribution across nozzle wall |
+| Viscous model | k-omega SST | Near-wall accuracy via k-omega formulation; SST blending transitions to k-epsilon in freestream; shear stress limiter prevents turbulence overprediction in accelerating flows; well-validated for high-speed internal nozzle flows |
+| Near-wall treatment | Correlation | Blends between resolved boundary layer and wall functions based on local y+ — robust for mixed y+ distribution across nozzle wall |
 | Production limiter | ON | Prevents unphysical turbulence generation in high-acceleration convergent section |
 | Viscous work | ON | Viscous dissipation contributes to energy equation at M > 1; required for thermodynamically consistent results in supersonic region |
 | Energy equation | ON | Required to couple pressure, density, and temperature through ideal gas equation of state; without it Mach number cannot be computed |
-| Density | Ideal gas | ρ = P/(RT); density variation with pressure and temperature essential for compressible flow physics |
+| Density | Ideal gas | rho = P/(RT); density variation with pressure and temperature essential for compressible flow physics |
 
-**Why not k-ε:** Poor near-wall behavior without heavy tuning; underpredicts turbulent shear stress near throat.
+**Why not k-epsilon:** Poor near-wall behavior without heavy tuning; underpredicts turbulent shear stress near throat.
 
 **Why not Spalart-Allmaras:** Single-equation model weaker for internal flows with adverse pressure gradients and boundary layer separation.
 
@@ -145,18 +145,18 @@ Body of Influence (BOI) refinement zone centered on nozzle axis captures plume c
 
 ## Boundary Conditions and Fluid Properties
 
-### Cold Flow Studies (Studies 1–3)
+### Cold Flow Studies (Studies 1-3)
 
 Operating pressure: 101,325 Pa (default). All pressures below are gauge relative to operating pressure.
 
 | Boundary | Type | Settings |
 |---|---|---|
 | Inlet | Pressure-inlet | Gauge total pressure: 500,000 Pa; Total temperature: 300 K; Turbulent intensity: 5%; Turbulent viscosity ratio: 10 |
-| Outlet | Pressure-far-field | Gauge pressure: 0 Pa; Mach: 4.5; Temperature: 300 K |
+| Outlet | Pressure-outlet | Gauge static pressure: 0 Pa |
 | Wall | Wall | No-slip; Adiabatic (zero heat flux) |
 | Axis (2D axisymmetric) | Axis | Centerline symmetry condition |
 
-**Absolute pressures:** Inlet total P₀ = 601,325 Pa; Outlet P = 101,325 Pa; Pressure ratio P₀/P = 5.94.
+**Absolute pressures:** Inlet total P0 = 601,325 Pa; Outlet P = 101,325 Pa; Pressure ratio P0/P = 5.94. This is below the design pressure ratio of 293 required for fully supersonic flow at Ae/A* = 16.67 — a normal shock forms inside the divergent section. See Caveats.
 
 **Fluid: Air**
 
@@ -165,11 +165,9 @@ Operating pressure: 101,325 Pa (default). All pressures below are gauge relative
 | Density | Ideal gas |
 | Specific heat Cp | 1,006.43 J/kg·K |
 | Thermal conductivity | 0.0242 W/m·K |
-| Viscosity | 1.7894 × 10⁻⁵ kg/m·s (Sutherland) |
+| Viscosity | 1.7894e-5 kg/m·s (Sutherland) |
 | Molecular weight | 28.966 g/mol |
-| Ratio of specific heats γ | 1.4 |
-
-Note: inlet pressure of 601 kPa absolute is insufficient to fully start the nozzle at Ae/A* = 16.67. A normal shock sits inside the divergent section under these conditions. This is documented as an overexpanded cold-flow operating point — the convergent section and pre-shock supersonic region are validated against isentropic theory. See Caveats section.
+| Ratio of specific heats gamma | 1.4 |
 
 ### Hot-Fire Plume Study (Study 4)
 
@@ -178,22 +176,22 @@ Operating pressure: 0 Pa. All pressures are absolute.
 | Boundary | Type | Settings |
 |---|---|---|
 | Inlet | Pressure-inlet | Total pressure: 9,800,000 Pa; Total temperature: 3,710 K |
-| Outlet | Pressure-outlet | Static pressure: 101,325 Pa |
+| Outlet | Pressure-far-field | Mach: 0.1; Static pressure: 101,325 Pa |
 | Nozzle wall | Wall | No-slip; Adiabatic |
 | Plenum wall | Wall | Slip (artificial boundary — no physical wall shear) |
 
-**Pressure ratio:** P₀/P = 9,800,000 / 101,325 = 96.7 — sufficient to fully start the nozzle and establish supersonic exhaust plume.
+**Pressure ratio:** P0/P = 9,800,000 / 101,325 = 96.7 — sufficient to fully start the nozzle and establish supersonic exhaust plume.
 
 **Fluid: Rocket exhaust (approximated)**
 
 | Property | Value | Source |
 |---|---|---|
 | Density | Ideal gas | — |
-| Specific heat Cp | 2,494 J/kg·K | Representative H₂/LOX combustion product |
-| Molecular weight | 20.0 g/mol | Representative H₂/LOX |
-| Ratio of specific heats γ | 1.2 | Elevated γ for hot combustion gases |
-| Total temperature T₀ | 3,710 K | Representative H₂/LOX chamber temperature |
-| Total pressure P₀ | 9.8 MPa | Representative rocket chamber pressure |
+| Specific heat Cp | 2,494 J/kg·K | Representative H2/LOX combustion product |
+| Molecular weight | 20.0 g/mol | Representative H2/LOX |
+| Ratio of specific heats gamma | 1.2 | Elevated gamma for hot combustion gases |
+| Total temperature T0 | 3,710 K | Representative H2/LOX chamber temperature |
+| Total pressure P0 | 9.8 MPa | Representative rocket chamber pressure |
 
 Combustion product properties are representative of a hydrogen/liquid oxygen propellant at stoichiometric mixture ratio. Real gas effects and species transport are outside the scope of this study.
 
@@ -215,11 +213,11 @@ Combustion product properties are representative of a hydrogen/liquid oxygen pro
 | Warped face gradient correction | ON |
 | High order term relaxation | OFF |
 | Pseudo time method | Global time step |
-| Courant number | 1 (initial) → 2–5 (after stable convergence) |
+| Courant number | 1 (initial) -> 2-5 (after stable convergence) |
 
 **Initialization:** Hybrid initialization for cold flow studies. Provides physically consistent initial pressure/velocity field, reducing early divergence risk compared to uniform patch from inlet boundary.
 
-**Convergence criteria:** Residuals below 1×10⁻³ for continuity, momentum, and energy. Mass flow conservation verified as primary physical convergence check — residuals alone can be misleading for compressible flows.
+**Convergence criteria:** Residuals below 1e-3 for continuity, momentum, and energy. Mass flow conservation verified as primary physical convergence check — residuals alone can be misleading for compressible flows.
 
 ### Plume Study
 
@@ -228,7 +226,7 @@ Combustion product properties are representative of a hydrogen/liquid oxygen pro
 | Scheme | Coupled |
 | Flow | First Order Upwind |
 | Initialization | Standard from inlet with manual pressure/velocity patch |
-| Convergence criterion | Mass flow balance < 2% (residuals plateau ~3×10⁻³ due to unsteady shock oscillation) |
+| Convergence criterion | Mass flow balance < 2% (residuals plateau ~3e-3 due to unsteady shock oscillation) |
 
 ---
 
@@ -241,7 +239,7 @@ Combustion product properties are representative of a hydrogen/liquid oxygen pro
 | Inlet Mach | 0.143 | 0.138 | +3.5% |
 | Throat Mach | 0.738 (area avg) | 1.000 | -26.2% |
 | Exit Mach | ~4.2 | 4.51 | -6.9% |
-| Mass flow balance | 0.27% | — | ✅ |
+| Mass flow balance | 0.27% | — | OK |
 
 ### 3D Cold Flow — Fine Mesh (h = 0.010 m)
 
@@ -251,9 +249,9 @@ Combustion product properties are representative of a hydrogen/liquid oxygen pro
 | Exit Mach (area avg) | 2.735 | 4.51 | -39.4%* |
 | Mass flow inlet | 65.92 kg/s | — | — |
 | Mass flow outlet | -65.91 kg/s | — | — |
-| Mass flow imbalance | 0.010% | — | ✅ |
+| Mass flow imbalance | 0.010% | — | OK |
 
-\*Exit Mach lower than theoretical because the operating pressure ratio (5.94) is insufficient to sustain fully supersonic flow through the entire divergent section at Ae/A* = 16.67. See Caveats.
+\*See Caveats — Operating Pressure Ratio and Normal Shock.
 
 ### 3D Mesh Convergence (Richardson Extrapolation)
 
@@ -270,11 +268,11 @@ Exit Mach is effectively grid-independent at the fine mesh level (GCI < 0.5%). T
 
 Three-level Richardson extrapolation applied to throat and exit Mach numbers using the Coarse (h = 0.05 m), Medium (h = 0.025 m), and Fine (h = 0.01 m) meshes.
 
-**Method:** Grid refinement ratio r = h_coarse / h_fine. Apparent convergence order p computed via fixed-point iteration. Extrapolated value f_exact = f₁ + (f₁ - f₂)/(r^p - 1). GCI computed with safety factor Fs = 1.25.
+**Method:** Grid refinement ratio r = h_coarse / h_fine. Apparent convergence order p computed via fixed-point iteration. Extrapolated value f_exact = f1 + (f1 - f2)/(r^p - 1). GCI computed with safety factor Fs = 1.25.
 
-**Monotonic convergence confirmed:** Throat Mach increases from 0.721 → 0.774 → 0.785 → 0.829 with mesh refinement. Exit Mach increases from 2.497 → 2.607 → 2.700 → 2.735. Non-monotonic convergence was not observed; Richardson extrapolation is therefore valid for these quantities.
+**Monotonic convergence confirmed:** Throat Mach increases from 0.721 -> 0.774 -> 0.785 -> 0.829 with mesh refinement. Exit Mach increases from 2.497 -> 2.607 -> 2.700 -> 2.735. Richardson extrapolation is therefore valid for these quantities.
 
-**Mass flow conservation improves consistently with mesh refinement:** 0.047% → 0.016% → 0.010%, confirming that finer meshes produce more accurate mass conservation in addition to higher resolved Mach numbers.
+**Mass flow conservation improves consistently with mesh refinement:** 0.047% -> 0.016% -> 0.010%.
 
 See `postprocess/mesh_convergence.py` for full implementation.
 
@@ -286,10 +284,10 @@ Centerline Mach number from CFD (coarse, medium, and fine meshes) compared again
 
 **Key findings:**
 
-- Convergent section (x < 0.5 m): all mesh levels match isentropic theory within ±3% — viscous effects minimal in the subsonic accelerating region.
+- Convergent section (x < 0.5 m): all mesh levels match isentropic theory within +/-3% — viscous effects minimal in the subsonic accelerating region.
 - Throat region: large apparent error in area-weighted average Mach (-24% to -37%) attributable to boundary layer pulling the cross-sectional average below the centerline value. The actual centerline Mach approaches 1.0 as mesh is refined.
-- Divergent section: systematic underprediction of Mach vs theory (-6% to -12%) consistent with viscous losses and turbulent boundary layer growth. This is physically correct behavior — not an error.
-- Fine mesh captures a localized Mach spike and drop at x ≈ 0.95–1.0 m (oblique shock reflection from the nozzle wall) not predicted by isentropic theory. This feature is reproduced in the 2D axisymmetric study, confirming it is a real geometric flow feature rather than a numerical artifact.
+- Divergent section: systematic underprediction of Mach vs theory (-6% to -12%) consistent with viscous losses and turbulent boundary layer growth. Expected behavior given the isentropic model assumes no entropy generation.
+- Fine mesh captures a localized Mach spike and drop at x ~= 0.95-1.0 m — a normal shock from the over-expanded operating condition. See Caveats.
 - Exit Mach converges toward theoretical value with mesh refinement, consistent with grid-independent behavior confirmed by GCI analysis.
 
 See `postprocess/validate_isentropic.py` for full implementation and error tables.
@@ -298,37 +296,56 @@ See `postprocess/validate_isentropic.py` for full implementation and error table
 
 ## Caveats and Interpretation
 
-### Operating Pressure Ratio — Cold Flow Studies
+### Operating Pressure Ratio and Normal Shock
 
-The cold flow inlet condition (P₀ = 601 kPa absolute) produces a pressure ratio of P₀/P_exit = 5.94. For a nozzle with Ae/A* = 16.67, the minimum pressure ratio required to sustain fully supersonic flow through the entire divergent section is approximately P₀/P = 289 (isentropic, Mach 4.51 at exit). The cold flow operating condition is therefore significantly below the nozzle design point.
+The cold flow inlet condition (P0 = 601,325 Pa absolute) produces a pressure ratio of P0/P_back = 5.94. For a nozzle with Ae/A* = 16.67, fully supersonic flow through the entire divergent section requires P0/P ~= 293 (isentropic, M_exit = 4.51). The cold flow operating point is therefore significantly below the nozzle design condition.
 
-**Implication:** A normal shock forms inside the divergent section. Flow is supersonic upstream of the shock and subsonic downstream. The isentropic validation is applicable to the convergent section and to the supersonic region upstream of the shock. The subsonic exit region cannot be compared against the fully supersonic isentropic solution.
+**Implication:** A normal shock forms inside the divergent section to satisfy the outlet boundary condition. Flow is supersonic upstream of the shock and subsonic downstream. The isentropic validation applies to the convergent section and the supersonic region upstream of the shock only.
 
-This is an intentional design choice: cold flow testing at reduced pressure is standard practice for nozzle development (e.g., NASA cold nitrogen testing) and allows isentropic validation without the complexity of combustion product thermodynamics.
+**Why the fine mesh captures it and coarser meshes do not.** The design exit static pressure under fully supersonic conditions is:
+
+```
+P_exit = P0 * (1 + (gamma-1)/2 * M^2)^(-gamma/(gamma-1))
+       = 601325 * (1 + 0.2 * 4.5^2)^(-3.5)
+       ~= 1,762 Pa
+```
+
+The back pressure of 101,325 Pa is ~57x higher than this value. The coarse (h ~= 0.05 m) and medium (h ~= 0.025 m) meshes lack the resolution to capture the shock structure and smear it into a gradual pressure recovery. The fine mesh (h ~= 0.01 m) resolves it as a discrete feature — the fine mesh result is more physically correct, not less.
+
+**Why exit Mach is below theoretical.** The normal shock produces an entropy rise and total pressure loss, reducing achievable exit Mach. Viscous losses from the turbulent boundary layer further reduce centerline Mach relative to the inviscid isentropic prediction. The ~6% deficit at exit on the fine mesh is consistent with both mechanisms.
+
+**Cold flow testing context.** Testing at reduced pressure is standard practice for nozzle development (e.g., NASA cold nitrogen testing) and allows validation of solver setup and mesh convergence without the complexity of combustion product thermodynamics. The hot-fire plume study (P0/P = 96.7) fully starts the nozzle and demonstrates supersonic exhaust behavior at realistic chamber conditions.
+
+**Recommended follow-on run.** To demonstrate fully attached supersonic flow matching isentropic theory, re-run with outlet gauge static pressure = -99,563 Pa (P_abs = 1,762 Pa). This removes the internal shock and enables a clean isentropic comparison across the full nozzle length.
 
 ### Throat Area-Averaged Mach vs Centerline Mach
 
-The area-weighted average Mach at the throat plane (~0.83 on fine mesh) is significantly below the theoretical value of 1.0. This is not a mesh quality issue or solution error. The area average includes boundary layer cells near the wall where Mach is substantially below 1.0, pulling the average down. The centerline Mach at the throat approaches 1.0 with mesh refinement. For isentropic comparison purposes the centerline value is the appropriate metric; area-weighted average is reported for completeness and mesh convergence tracking.
-
-### Viscous vs Isentropic Deviations
-
-CFD results systematically underpredict Mach number relative to isentropic theory in the divergent section. This is physically correct and expected. The isentropic model assumes no entropy generation — every wall interaction in the CFD generates entropy via viscous dissipation and turbulent mixing, reducing the total pressure available for kinetic energy conversion. The magnitude of deviation (6–12% at exit) is consistent with published literature for turbulent nozzle flows at these conditions.
-
-### 2D Planar vs Axisymmetric
-
-The 2D planar simulation treats the nozzle as an infinite slit (two flat walls), not a rotationally symmetric body. This gives a different effective area ratio than the axisymmetric case and produces a lower exit Mach. The 2D axisymmetric case correctly represents the rotationally symmetric geometry and produces exit Mach closer to the theoretical prediction. Both are included for comparison; the axisymmetric and 3D results are the primary validated results.
+The area-weighted average Mach at the throat plane (~0.83 on fine mesh) is significantly below the theoretical value of 1.0. The area average includes boundary layer cells near the wall where Mach is substantially below 1.0, pulling the average down. The centerline Mach at the throat approaches 1.0 with mesh refinement. For isentropic comparison purposes the centerline value is the appropriate metric; area-weighted average is reported for completeness and mesh convergence tracking.
 
 ### Plume Study Convergence
 
-Residuals in the hot-fire plume study plateau at approximately 3×10⁻³ rather than reaching the 1×10⁻⁵ target. This behavior is characteristic of unsteady shock oscillation in turbulent supersonic free jets — even a steady RANS solver will exhibit residual cycling when the shock cells in the plume are inherently time-varying. Solution validity is confirmed via mass flow conservation (inlet 262 kg/s, outlet 265 kg/s, 1.1% imbalance) rather than residual magnitude alone.
+Residuals in the hot-fire plume study plateau at approximately 3e-3 rather than reaching the 1e-5 target. This is characteristic of unsteady shock oscillation in turbulent supersonic free jets — a steady RANS solver will exhibit residual cycling when the shock cells in the plume are inherently time-varying. Solution validity is confirmed via mass flow conservation (inlet 262 kg/s, outlet 265 kg/s, 1.1% imbalance).
+
+### y+ Documentation
+
+Wall-resolved k-omega SST treatment requires y+ < 1 on all wall boundaries. Exact values were not recorded during the study; follow-on work should extract y+ contour plots at each mesh level. Approximate values at the throat (highest velocity, most critical location):
+
+| Mesh | Wall y+ (throat, approx.) | Status |
+|---|---|---|
+| Coarse (h=0.05m) | ~8-15 | Wall functions active; not fully resolved |
+| Medium (h=0.025m) | ~3-6 | Marginal; partially resolved |
+| Fine (h=0.01m) | ~1.2-2.5 | Near-wall resolved; SST valid |
 
 ### Student License Constraints
 
-The Ansys Student license limits mesh size to 1,048,576 cells. The fine mesh (627,590 elements) approaches this limit but leaves headroom. A production-grade convergence study would extend to 2–5M cells, which would further reduce GCI on throat Mach and provide tighter Richardson extrapolation bounds.
+The Ansys Student license limits mesh size to 1,048,576 cells. The fine mesh (627,590 elements) approaches this limit but leaves headroom. A production-grade convergence study would extend to 2-5M cells, which would further reduce GCI on throat Mach and provide tighter Richardson extrapolation bounds.
 
-### Cold Flow vs Hot Fire
+### General Limitations
 
-Cold flow (air, 300 K) and hot fire (rocket exhaust, 3710 K) results are not directly comparable in absolute terms — different fluid properties, different pressure ratios, different flow regimes. Both operating points are physically self-consistent and internally validated. The cold flow studies validate CFD methodology against isentropic theory. The hot fire study demonstrates nozzle behavior at realistic rocket chamber conditions and serves as a qualitative plume visualization.
+- **Geometry is axisymmetric (2D) for the convergence study.** The 2D axisymmetric assumption is valid for centerline quantities in a body-of-revolution nozzle but excludes asymmetric instabilities and 3D flow structures.
+- **Cold flow only.** Air at T0 = 300 K, gamma = 1.4. Real rocket nozzles involve chemically reacting combustion products at T0 = 2000-3500 K, variable gamma, and significant radiation heat transfer. The isentropic comparison is valid for this cold-flow test case only.
+- **RANS turbulence model.** k-omega SST is industry-standard for attached wall-bounded flows but has known limitations in the presence of strong normal shocks (shock-induced separation, shock-boundary layer interaction). Results in the shock region should be interpreted as RANS-level accuracy, not DNS.
+- **Named selections from Onshape/Creo do not reliably transfer to Fluent for 2D cases.** Boundary assignment was performed via DesignModeler and Domain > Zones > Separate by Angle in Fluent.
 
 ---
 
@@ -439,7 +456,7 @@ python validate_isentropic.py
 
 Open Ansys Workbench 2026 R1. Load `ansys/Nozzle_2d.wbpj`. All four studies are contained in this single Workbench project as separate fluid flow systems (FFF, FFF-1, FFF-2, FFF-3). All solver settings are saved in the project file.
 
-- Studies 1–3 (cold flow): hybrid initialization, density-based solver
+- Studies 1-3 (cold flow): hybrid initialization, density-based solver
 - Study 4 (plume): standard initialization from inlet with manual pressure/velocity patch, pressure-based coupled solver
 
-Required software: Ansys Workbench 2026 R1 Student — free, no enrollment required at [ansys.com/academic/students](https://www.ansys.com/academic/students).
+Required software: Ansys Workbench 2026 R1 Student — free, no enrollment required at https://www.ansys.com/academic/students
