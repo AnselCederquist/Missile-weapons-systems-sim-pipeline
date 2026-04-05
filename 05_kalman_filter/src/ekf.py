@@ -107,47 +107,48 @@ for i in range(1, n):
     x_est[i] = x_p
 
 # --- Plot ---
-import os
-os.makedirs("D:/Weapons-systems-sim-pipeline/05_kalman_filter/results/figures", exist_ok=True)
+if __name__ == "__main__":
+    import os
+    os.makedirs("D:/Weapons-systems-sim-pipeline/05_kalman_filter/results/figures", exist_ok=True)
 
-fig, axes = plt.subplots(3, 2, figsize=(12, 12))
-fig.suptitle("6-State EKF -- Boost-Sustain Missile Trajectory", fontsize=13)
-labels     = ["X (m)", "Z (m)", "Vx (m/s)", "Vz (m/s)", "X Error (m)", "Z Error (m)"]
-state_idx  = [0, 2, 3, 5, None, None]
-gps_idx    = [0, 2, None, None, None, None]
+    fig, axes = plt.subplots(3, 2, figsize=(12, 12))
+    fig.suptitle("6-State EKF -- Boost-Sustain Missile Trajectory", fontsize=13)
+    labels     = ["X (m)", "Z (m)", "Vx (m/s)", "Vz (m/s)", "X Error (m)", "Z Error (m)"]
+    state_idx  = [0, 2, 3, 5, None, None]
+    gps_idx    = [0, 2, None, None, None, None]
 
-for plot_i, ax in enumerate(axes.flat):
-    if plot_i == 4:
-        err = x_est[:,0] - state[:,0]
-        ax.plot(ts, err, "g-", lw=1.0)
-        ax.axhline(0, color="k", lw=0.8, ls="--")
-        ax.fill_between(ts, err, 0, alpha=0.2, color="green")
-    elif plot_i == 5:
-        err = x_est[:,2] - state[:,2]
-        ax.plot(ts, err, "g-", lw=1.0)
-        ax.axhline(0, color="k", lw=0.8, ls="--")
-        ax.fill_between(ts, err, 0, alpha=0.2, color="green")
-    else:
-        si = state_idx[plot_i]
-        ax.plot(ts, state[:,si], "k-", lw=1.5, label="Truth")
-        ax.plot(ts, x_est[:,si], "b--", lw=1.0, label="EKF")
-        if gps_idx[plot_i] is not None:
-            ax.plot(ts, gps_pos[:,gps_idx[plot_i]], "r.", ms=1, alpha=0.3, label="GPS")
-        ax.legend(fontsize=7)
-    ax.set_ylabel(labels[plot_i])
-    ax.set_xlabel("Time (s)")
-    ax.grid(True, alpha=0.3)
+    for plot_i, ax in enumerate(axes.flat):
+        if plot_i == 4:
+            err = x_est[:,0] - state[:,0]
+            ax.plot(ts, err, "g-", lw=1.0)
+            ax.axhline(0, color="k", lw=0.8, ls="--")
+            ax.fill_between(ts, err, 0, alpha=0.2, color="green")
+        elif plot_i == 5:
+            err = x_est[:,2] - state[:,2]
+            ax.plot(ts, err, "g-", lw=1.0)
+            ax.axhline(0, color="k", lw=0.8, ls="--")
+            ax.fill_between(ts, err, 0, alpha=0.2, color="green")
+        else:
+            si = state_idx[plot_i]
+            ax.plot(ts, state[:,si], "k-", lw=1.5, label="Truth")
+            ax.plot(ts, x_est[:,si], "b--", lw=1.0, label="EKF")
+            if gps_idx[plot_i] is not None:
+                ax.plot(ts, gps_pos[:,gps_idx[plot_i]], "r.", ms=1, alpha=0.3, label="GPS")
+            ax.legend(fontsize=7)
+        ax.set_ylabel(labels[plot_i])
+        ax.set_xlabel("Time (s)")
+        ax.grid(True, alpha=0.3)
 
-plt.tight_layout()
-plt.savefig("D:/Weapons-systems-sim-pipeline/05_kalman_filter/results/figures/ekf_trajectory.png",
-            dpi=150, bbox_inches="tight")
-print("Plot saved")
-plt.show()
+    plt.tight_layout()
+    plt.savefig("D:/Weapons-systems-sim-pipeline/05_kalman_filter/results/figures/ekf_trajectory.png",
+                dpi=150, bbox_inches="tight")
+    print("Plot saved")
+    plt.show()
 
-pos_rmse = np.sqrt(np.mean((x_est[:,[0,2]] - state[:,[0,2]])**2))
-vel_rmse = np.sqrt(np.mean((x_est[:,[3,5]] - state[:,[3,5]])**2))
-print(f"Position RMSE: {pos_rmse:.2f} m")
-print(f"Velocity RMSE: {vel_rmse:.2f} m/s")
+    pos_rmse = np.sqrt(np.mean((x_est[:,[0,2]] - state[:,[0,2]])**2))
+    vel_rmse = np.sqrt(np.mean((x_est[:,[3,5]] - state[:,[3,5]])**2))
+    print(f"Position RMSE: {pos_rmse:.2f} m")
+    print(f"Velocity RMSE: {vel_rmse:.2f} m/s")
 
 def run_ekf(seed=42, Q_scale=1.0, R_scale=1.0):
     """Callable interface for testing. Returns (state, ts, x_est)."""

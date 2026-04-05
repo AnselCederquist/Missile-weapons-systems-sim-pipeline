@@ -2,6 +2,44 @@
 
 Static structural finite element analysis of a Ti-6Al-4V missile fin assembly under 10,000g axial setback load. Five-level mesh convergence study with Richardson extrapolation and GCI analysis. Identifies and characterizes a persistent mesh quality artifact at the tab-fin geometric transition.
 
+## Overview
+
+A missile fin experiences its most severe structural load not during flight
+but at the moment of launch. Gun-launched or rocket-boosted munitions subject
+the airframe to axial accelerations of thousands of g -- the setback load.
+If the fin fails at launch, the mission ends before it begins. This study
+answers the structural question: does the fin survive a 10,000g axial setback
+load, and where is the critical stress concentration?
+
+The fin geometry is a tapered trapezoidal Ti-6Al-4V plate with a mounting tab,
+derived from the NACA 0012 section selected in Project 01. Ti-6Al-4V is the
+standard aerospace structural titanium alloy -- high specific strength, good
+fatigue resistance, proven in missile and aircraft applications. The 10,000g
+load case is representative of gun-launched munition requirements and
+constitutes a severe but realistic design condition.
+
+Finite element analysis in Ansys Mechanical with five mesh refinement levels
+provides the mesh convergence study. Richardson extrapolation extracts the
+grid-converged solution from the finest three mesh levels, and the Grid
+Convergence Index (GCI) quantifies the discretization error bound. This is
+the same methodology used in published CFD and FEA validation studies and
+gives a defensible, quantified answer to the question of how much the result
+depends on mesh density.
+
+Key finding: deformation converges cleanly to 1.363 microns (GCI < 0.001%).
+Von Mises stress shows a persistent non-monotonic convergence pattern
+attributed to low-quality elements at the tab-fin junction edges -- a
+geometric transition that produces a stress concentration the mesh cannot
+fully resolve within the student license node limit. Stress reported as
+mean +/- 1-sigma of the finest three meshes. Safety factor approximately
+660x versus Ti-6Al-4V yield strength -- the fin is structurally overbuilt
+for this load case, which is expected for a preliminary geometry not yet
+mass-optimized.
+
+This result validates the fin geometry for the setback load case and provides
+the structural baseline for the fin assembly carried forward into the aero
+database (Project 04) and flight simulation (Project 06).
+
 ---
 
 ## Table of Contents

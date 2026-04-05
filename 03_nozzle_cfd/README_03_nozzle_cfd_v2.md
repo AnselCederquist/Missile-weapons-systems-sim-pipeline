@@ -2,6 +2,45 @@
 
 Compressible flow simulation of a conical De Laval nozzle in Ansys Fluent. Mach number and pressure distributions validated against isentropic flow relations across four mesh refinement levels. Supplemented by a hot-fire supersonic exhaust plume study at representative rocket chamber conditions.
 
+## Overview
+
+A De Laval (converging-diverging) nozzle is the fundamental propulsion
+component of any rocket or missile -- it converts high-pressure combustion
+gas into directed thrust by accelerating flow through a throat to supersonic
+speeds. Designing and validating a nozzle requires understanding the
+compressible flow field: where does the flow go supersonic, how do the
+pressure and Mach number distributions compare to theory, and does the CFD
+model capture the correct shock structure in the supersonic plume?
+
+This study simulates compressible flow through a conical De Laval nozzle
+geometry (Ae/A* = 16.67, theoretical exit Mach ~4.5) in Ansys Fluent using
+a density-based coupled solver with k-omega SST turbulence, Roe-FDS flux
+scheme, and second-order upwind discretization. The solver configuration
+mirrors industry practice for internal compressible flow problems. Inlet
+total gauge pressure 500,000 Pa, outlet gauge pressure 0 Pa, operating
+pressure 101,325 Pa.
+
+Validation is against isentropic flow relations -- the exact analytical
+solution for adiabatic, inviscid, quasi-1D nozzle flow. If the CFD matches
+isentropic theory along the nozzle centerline, the solver is correctly
+capturing the compressible flow physics. Four mesh refinement levels are
+run and Richardson extrapolation applied to quantify discretization error,
+following the same GCI methodology used in Project 02.
+
+The supersonic plume study extends the domain downstream of the nozzle exit
+with a pressure-far-field boundary condition to capture the exhaust jet
+structure at representative rocket chamber conditions. The plume study
+demonstrates the shock-expansion fan system that forms when the nozzle
+operates at off-design pressure ratios -- a phenomenon critical to nozzle
+performance analysis and IR signature prediction.
+
+Key outcomes: Mach and pressure distributions validated against isentropic
+relations, mesh convergence quantified via Richardson extrapolation and GCI,
+and supersonic plume shock structure captured at representative operating
+conditions. This project demonstrates high-fidelity compressible CFD
+capability directly relevant to propulsion system design and analysis roles
+in the defense and aerospace industry.
+
 ---
 
 ## Table of Contents

@@ -5,6 +5,26 @@ XFLR5/XFOIL. Cl/Cd polars generated across a sweep of Reynolds numbers and
 angles of attack for missile canard application. Results feed airfoil selection
 for Project 04 missile body geometry.
 
+## Overview
+
+Designing a missile canard requires knowing how an airfoil behaves across the relevant flight envelope before committing to a geometry. Get it wrong and the fin stalls too early, 
+generates too much drag, or lacks the structural depth to survive launch loads. This study answers the question systematically: run 24 parametric polar sweeps across four NACA symmetric 
+profiles at three Reynolds numbers and two Mach numbers, extract the key aerodynamic metrics, and select the best candidate on objective criteria.
+
+The NACA 4-digit symmetric series (0006, 0008, 0012, 0015) is the standard starting point for missile fin design. Symmetric profiles produce zero pitching moment at zero AoA, which 
+simplifies stability analysis. The thickness parameter (6%, 8%, 12%, 15%) is the primary design variable -- thinner sections have lower wave drag at supersonic speeds but reduced 
+structural depth and lower CLmax at subsonic conditions. The tradeoff is not obvious from first principles, which is why a parametric sweep is the right approach.
+
+XFLR5/XFOIL uses a panel method with viscous boundary layer coupling and the e^n transition model (Ncrit=9, free transition) to compute lift, drag, and moment polars. 
+Prandtl-Glauert compressibility correction is applied for the M=0.5 cases. The tool is valid in the subsonic regime and appropriate for this application -- canard aerodynamics 
+at launch and low-speed flight phases where M < 0.5. Transonic and supersonic aerodynamics for the full flight envelope are handled in Project 04 via Digital DATCOM.
+
+Key finding: NACA 0012 selected. CLmax = 1.08 at Re=500k M=0.3, stall at 11 deg, L/D = 60.4. NACA 0015 has marginally higher CLmax but the added thickness increases drag without 
+meaningful L/D gain at the relevant Reynolds number. NACA 0006 shows unreliable results at Re=500k due to an unresolved laminar separation bubble. NACA 0012 is the optimal tradeoff 
+between lift capability, aerodynamic efficiency, and structural depth for a thin fin application.
+
+This result feeds directly into Project 02 (fin structural FEA geometry) and Project 04 (missile aero database fin section definition).
+
 ---
 
 ## Table of Contents

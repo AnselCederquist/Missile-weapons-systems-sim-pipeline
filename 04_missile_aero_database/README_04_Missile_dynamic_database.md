@@ -2,6 +2,52 @@
 
 Full aerodynamic coefficient database for a generic conical-nose / cylindrical-body / trapezoidal-fin missile. Digital DATCOM primary method, Barrowman subsonic cross-validation (pending), Ansys Fluent spot-checks (pending). Database feeds Project 06 6-DOF simulator via Python interpolation module.
 
+## Overview
+
+A missile guidance system needs to know how aerodynamic forces and moments
+vary with Mach number and angle of attack across the full flight envelope.
+This relationship -- the aerodynamic database -- is the foundation of every
+flight mechanics simulation, stability analysis, and control law design in
+the program. Without it, the 6-DOF simulator has no physics.
+
+Digital DATCOM (USAF Stability and Control Data Compendium) is the
+industry-standard semi-empirical tool for generating preliminary aero
+databases. It uses geometry and flight condition inputs to compute
+aerodynamic coefficients from a validated database of experimental and
+analytical results spanning subsonic through supersonic regimes. Raytheon,
+L3Harris, Northrop Grumman, and Aerojet Rocketdyne all use DATCOM for
+preliminary aero database generation -- it is not an academic tool, it is
+the actual industry workflow for this phase of missile development.
+
+The missile geometry is a conical nose / cylindrical body / 4-fin
+trapezoidal configuration with dimensions consistent with a small tactical
+missile (100mm body diameter, 1000mm length). Fin section is double-wedge
+at 5% thickness ratio, consistent with supersonic fin design practice.
+DATCOM is run across 5 Mach numbers (0.8, 1.2, 1.6, 2.0, 3.0) and 6 angles
+of attack (0 to 20 deg) for 30 total flight conditions.
+
+Barrowman equations provide an independent analytical cross-validation of
+the subsonic normal force derivative CNa. Barrowman is a closed-form method
+valid for slender bodies at low AoA in subsonic flow -- appropriate as an
+independent check on DATCOM subsonic normal force derivatives. Barrowman
+CNa = 14.19/rad vs DATCOM CLA = 5.14/rad at M=0.8. The large discrepancy
+is a known method mismatch: DATCOM models fins as a single equivalent wing
+panel while Barrowman applies explicit 4-fin body interference (K_f = 1.25).
+Both results are documented and contextualized.
+
+The database is packaged as a SciPy RegularGridInterpolator module
+(aero_interpolator.py) providing CL(M,alpha), CM(M,alpha), and CD(M,alpha)
+as callable functions. This module is imported directly by the Project 05
+Kalman filter for drag computation and will feed the Project 06 6-DOF
+equations of motion -- the pipeline is live and integrated.
+
+Key limitation: DATCOM subsonic wing methods produce CL but lack a moment
+method for this body-fin configuration. Supersonic methods produce CM but
+do not converge on CN/CA for low aspect ratio fins. This is a documented
+DATCOM method coverage limitation for tactical missile geometries, not a
+geometry input error. The available coefficients are sufficient for the
+6-DOF simulation.
+
 ## Geometry
 
 | Feature | Value |
