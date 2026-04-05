@@ -392,6 +392,10 @@ estimated from endurance limit divided by max stress.
   levels. Infinite life at 1e8 cycles with large margins. Fatigue would become
   relevant for a reusable or multi-shot system.
 
+  System-level FMEA covering structural failure modes (fin launch failure, fin
+  resonance, nose cone thermal failure) is in `08_gnc_monte_carlo/src/fmea.py`.
+  All structural items have RPN < 10 — near-zero occurrence on a validated design.
+
 ## Assumptions
 
 - Missile body acts as perfect heat sink at fin root — no heat conduction into
