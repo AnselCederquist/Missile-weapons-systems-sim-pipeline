@@ -4,3 +4,5 @@ __pycache__/
 *.pyc 
 __pycache__/ 
 *.pyc 
+07_thermal_structural/ansys/Project_07_files/ 
+07_thermal_structural/ansys/.Project_07_files.backup/ 
