@@ -1,0 +1,500 @@
+# Project 08 — GNC / Monte Carlo Engagement Analysis
+
+Proportional navigation guidance law implementation, 500-run Monte Carlo engagement
+simulation, and full performance analysis of a missile homing on a maneuvering drone
+target. Three PN variants implemented and compared. Outputs: miss distance
+distribution, CEP, Pk curve, launch envelope heatmap, sensitivity analysis, ECM
+robustness, and animated 3D trajectory.
+
+## Overview
+
+Guidance, navigation, and control (GNC) is the intelligence layer that separates a
+ballistic projectile from a guided weapon. This project implements a True Proportional
+Navigation (TPN) guidance law on a point mass missile model and characterizes
+performance across 500 randomized engagements against a 3g maneuvering drone target.
+
+The analysis pipeline is:
+
+Point mass missile dynamics (Project 06 propulsion/drag)
+→ True PN guidance law (LOS rate computation, seeker FOV, actuator lag)
+→ Maneuvering target model (bang-bang evasion, 3g lateral acceleration)
+→ Single engagement simulation with CPA detection
+→ 500-run Monte Carlo (randomized geometry, heading, noise, wind)
+→ Performance metrics: CEP50/90/95, Pk, launch envelope, sensitivity, ECM
+
+Key result: TPN with N=5 achieves CEP50=374m and Pk=0.8% against a fully
+maneuvering 3g drone target at randomized launch geometries spanning 1-8km range.
+Performance is limited by the decoupled vertical channel and absence of end-game
+guidance refinement — both documented modeling choices, not implementation errors.
+TPN outperforms PPN by 8x in CEP50 on this engagement geometry.
+
+## Pipeline Integration
+
+| Upstream project | Contribution |
+|---|---|
+| Project 04 | Drag database — `aero_interpolator.get_CD(mach, alpha)` |
+| Project 06 | Propulsion parameters, mass model, atmospheric model |
+
+## Engagement Geometry
+
+**Nominal engagement:**
+- Launch position: [0, 0, 10] m (ground launch)
+- Target position: [4000, 300, 500] m
+- Launch range: ~4.0 km
+- Target altitude: 500 m
+- Target speed: 50 m/s
+- Target max lateral acceleration: 3g (29.4 m/s²)
+- Target heading: randomized 0-360° in Monte Carlo
+
+**Monte Carlo randomization:**
+
+| Parameter | Distribution | σ or range |
+|---|---|---|
+| Launch position X/Y | Gaussian | 50 m |
+| Launch angle | Gaussian | ±5° |
+| Launch azimuth | Gaussian | ±5° |
+| Target position X/Y | Gaussian | 500 m |
+| Target altitude | Gaussian | ±100 m (min 100 m) |
+| Target heading | Uniform | 0–360° |
+| Wind X/Y | Gaussian | 5 m/s |
+| Seeker noise seed | Random | — |
+
+## Missile Model
+
+**Dynamics:** 6-state point mass [x, y, z, vx, vy, vz], RK4 integration, dt=0.02s
+
+**Propulsion (from Project 06):**
+
+| Parameter | Value |
+|---|---|
+| Launch mass | 20.0 kg |
+| Burnout mass | 15.0 kg |
+| Boost thrust | 3000 N (0–2s) |
+| Sustain thrust | 800 N (2–15s) |
+| Reference area | 0.00785 m² |
+
+**Drag:** CD(Mach) from Project 04 aero database, α=0 (point mass)
+
+**Equations of motion:**
+
+    a = (F_thrust + F_drag + F_gravity) / m + a_lateral
+
+Thrust along velocity vector. Drag along negative velocity vector. Lateral
+acceleration from guidance law added directly — no fin deflection or autopilot
+dynamics modeled. This is the standard point mass assumption for engagement
+analysis; full 6-DOF is used for trajectory/structural work (Project 06).
+
+## Guidance Laws
+
+Three PN variants implemented, all in `guidance.py`. Navigation constant N=5 for TPN
+(nominal), N=3 for PPN.
+
+**Pure PN (PPN):**
+
+    a_cmd = N · Vc · ω
+
+LOS rate computed in inertial frame. Simplest formulation — does not account for
+missile velocity direction. Used as baseline comparison.
+
+**True PN (TPN) — primary variant:**
+
+    a_cmd = N · Vc · ω_perp
+
+LOS rate projected perpendicular to missile velocity vector. Physically correct
+lateral acceleration command. Closing velocity Vc computed as component of relative
+velocity along LOS unit vector.
+
+    Vc = -dot(v_t - v_m, los_hat)
+    ω = cross(los_hat, v_rel) / R
+    ω_perp = ω - dot(ω, v_m_hat) · v_m_hat
+
+**Augmented PN (APN):**
+
+    a_cmd = N · Vc · ω_perp + (N/2) · a_t_perp
+
+Adds target acceleration compensation. Requires target acceleration estimate.
+APN vertical channel is not stable with the current decoupled altitude controller —
+performance degrades significantly (CEP50=2036m). Documented as future work.
+
+**Vertical channel:**
+
+PN guidance operates in the horizontal plane; vertical tracking handled separately:
+
+    a_cmd[Z] = 0.015 · (z_target - z_missile) + 0.5 · g · cos(elevation)
+
+Proportional altitude error term plus gravity compensation. Overrides PN vertical
+component to prevent altitude instability from omega_perp projection. This is a
+modeling simplification — a proper 3D TPN implementation would not require this
+decoupling.
+
+**Seeker model:**
+
+- Gaussian LOS rate noise: σ=0.05 rad/s
+- FOV limit: ±90° from missile velocity vector (effective forward hemisphere)
+- FOV check disabled within 800m range to prevent terminal lock loss
+- Seeker loss terminates engagement after CPA
+
+**Actuator lag:**
+
+First-order lag on achieved acceleration:
+
+    da/dt = (a_cmd - a_achieved) / τ,  τ = 0.1s
+
+XY and Z channels limited independently:
+- XY: 10g (98.1 m/s²)
+- Z: 5g (49.1 m/s²)
+
+## Target Model
+
+Maneuvering drone modeled as 6-state point mass with bang-bang lateral evasion.
+
+| Parameter | Value |
+|---|---|
+| Speed | 50 m/s |
+| Altitude | 500 m (held constant) |
+| Max lateral acceleration | 3g (29.4 m/s²) |
+| Maneuver interval | Uniform random 2–4 s |
+| Maneuver type | Bang-bang (±max accel, random sign) |
+
+Altitude held constant by velocity damping term. Speed enforced by normalizing
+velocity after each integration step.
+
+## CPA Detection
+
+Closest point of approach detected by monitoring range monotonicity:
+
+    if R_now > R_prev + 50m → CPA passed
+
+Miss distance recorded as minimum range achieved during engagement. Engagement
+terminates at CPA + 50m divergence (after burnout) or at lethal radius (hit).
+
+## Results
+
+### Single Engagement (nominal, seed=42)
+
+| Metric | Value |
+|---|---|
+| Miss distance | 57.9 m |
+| Time to CPA | 9.3 s |
+| Flight time | 10.6 s |
+| Peak speed | ~630 m/s (Mach 1.84) |
+| Seeker status | Valid throughout |
+
+### Monte Carlo (500 runs, TPN N=5)
+
+| Metric | Value |
+|---|---|
+| Pk (lethal radius 20m) | 0.8% |
+| CEP50 | 374.3 m |
+| CEP90 | 824.1 m |
+| CEP95 | 944.1 m |
+| Mean miss distance | 426.8 m |
+| Std miss distance | 276.4 m |
+| Min miss distance | 13.0 m |
+| Max miss distance | 1255.2 m |
+
+### PN Variant Comparison (200 runs each)
+
+| Variant | CEP50 (m) | Pk (%) | Notes |
+|---|---|---|---|
+| PPN (N=3) | 2644 | 0.0 | Altitude channel broken — no vertical guidance |
+| TPN (N=5) | 340 | 1.0 | Primary variant, full altitude tracking |
+| APN (N=5) | 2036 | 0.0 | Vertical channel instability with target accel compensation |
+
+TPN is the only functional variant across all geometries. PPN and APN
+altitude channel failures are documented modeling limitations, not implementation
+errors in the lateral guidance logic.
+
+### Sensitivity Analysis
+
+| Parameter | Trend |
+|---|---|
+| Navigation constant N | Median miss decreases N=2→5, modest improvement N=5→6 |
+| Target maneuverability | Mild degradation 1g→5g — TPN is relatively robust |
+| Seeker noise σ | Minimum near σ=0.2 rad/s — counterintuitive, low-noise regime may excite oscillation |
+
+Optimal N=5 selected for nominal configuration.
+
+### Launch Envelope
+
+Median miss distance below 500m for launch ranges 1-3km, elevation angles 40-65°.
+Performance degrades significantly beyond 5km range and below 20° elevation.
+Low elevation angle at long range produces extreme altitude error at launch that
+the vertical channel cannot overcome within the engagement time.
+
+### Pk vs Launch Range
+
+Pk remains near zero across 0.5-9km range at 50 runs/point with 20m lethal radius.
+CEP50 increases monotonically from ~170m at 500m range to ~880m at 9km. Effective
+engagement range (CEP50 < lethal radius) not achieved with current guidance — would
+require end-game guidance refinement.
+
+### ECM Robustness (100 runs each)
+
+| Condition | CEP50 (m) | Pk (%) |
+|---|---|---|
+| Nominal σ=0.05 rad/s | 459 m | 0.0 |
+| Jammed σ=0.25 rad/s (5x) | 409 m | 0.0 |
+
+ECM has minimal effect on CEP50 — miss distance is dominated by geometry and
+maneuver timing, not seeker noise at these noise levels.
+
+## FMEA
+
+System-level failure mode and effects analysis covering the full simulation
+pipeline. 20 failure modes across GNC, propulsion, aerodynamics, navigation,
+structure, and software. Each rated Severity (S), Occurrence (O), and
+Detection (D) on a 1–10 scale. RPN = S × O × D. Sorted highest risk first.
+
+| Failure Mode | System | S | O | D | RPN |
+|---|---|---|---|---|---|
+| Python \_\_pycache\_\_ serving stale .pyc | Software | 5 | 6 | 6 | 180 |
+| Acceleration command saturation | GNC | 6 | 6 | 4 | 144 |
+| Altitude tracking failure | GNC | 8 | 5 | 3 | 120 |
+| CD evaluated at α=0 only | Aerodynamics | 4 | 7 | 4 | 112 |
+| Loss of target lock | GNC | 9 | 4 | 3 | 108 |
+| DATCOM method coverage gap | Aerodynamics | 5 | 8 | 2 | 80 |
+| Seeker noise saturation | GNC | 6 | 3 | 4 | 72 |
+| First-order lag too slow | GNC | 6 | 4 | 3 | 72 |
+| Motor burnout before intercept | Propulsion | 7 | 5 | 2 | 70 |
+| Fin structural failure at launch | Structure | 10 | 1 | 1 | 10 |
+| Fin resonance during motor burn | Structure | 8 | 1 | 1 | 8 |
+| Nose cone thermal failure | Structure | 7 | 1 | 1 | 7 |
+
+Structural failures all RPN < 10 — near-zero occurrence on a validated
+Ti-6Al-4V design with SF > 170× across all load cases (Projects 02, 07).
+Highest RPN items are software and guidance modeling choices, not hardware.
+
+Full table with causes, effects, and mitigations:
+`results/fmea_table.csv` and `results/figures/fmea_table.png`
+
+```
+python src/fmea.py
+```
+
+## Nominal Parameters
+
+```python
+NOMINAL = dict(
+    launch_angle_deg    = 20.0,
+    target_pos          = [4000.0, 300.0, 500.0],
+    target_speed        = 50.0,
+    target_max_accel_g  = 3.0,
+    guidance_variant    = 'TPN',
+    N                   = 5.0,
+    noise_std           = 0.05,
+    accel_limit_g       = 10.0,
+    lethal_radius       = 20.0,
+    dt                  = 0.02,
+    t_max               = 60.0,
+)
+```
+
+## Assumptions
+
+- Point mass missile — no fin deflection, no autopilot, no angle of attack
+- Vertical channel decoupled from PN lateral guidance
+- Target acceleration perfectly known (used directly for APN; TPN ignores it)
+- Seeker noise is Gaussian, uncorrelated — no colored noise or bias model
+- Wind applied as constant velocity offset to missile velocity during guidance
+  computation — no gust dynamics
+- Thrust along velocity vector — no thrust misalignment
+- Flat Earth, no Earth rotation
+- Atmosphere: exponential density model, constant speed of sound 343 m/s
+- Target altitude held perfectly constant — no altitude variation in evasion
+- Lethal radius 20m — representative of a proximity-fuzed warhead
+
+## Limitations
+
+- **Decoupled vertical channel:** TPN omega_perp projection mixes vertical LOS
+  rate into horizontal commands when missile velocity has a vertical component.
+  The P-controller workaround is functional but not physically rigorous. A proper
+  3D TPN implementation uses the full LOS rate vector without projection.
+
+- **No end-game guidance refinement:** No time-to-go estimation, no terminal
+  phase gain scheduling, no proportional navigation bias for target acceleration
+  compensation in TPN. These are standard additions for real missile guidance.
+
+- **Point mass model:** Lateral acceleration commands applied directly — no
+  aerodynamic response, no autopilot lag beyond the first-order lag model.
+  Full 6-DOF engagement simulation (coupling Project 06 to guidance) would
+  require fin deflection → moment → angle of attack → lift force chain.
+
+- **APN instability:** The (N/2)·a_t_perp term adds a large vertical component
+  when target acceleration is primarily horizontal, fighting the altitude
+  controller. Fix requires projecting a_t perpendicular to the LOS vector,
+  not just perpendicular to missile velocity.
+
+- **PPN altitude channel:** pure_pn() altitude fix applies gravity comp and
+  proportional term using current missile/target positions, but the function
+  was not validated across all Monte Carlo geometries. PPN is provided for
+  comparison only.
+
+- **50-run sensitivity analysis:** Sensitivity plots use 50 runs per parameter
+  value — insufficient for smooth curves, but adequate for trend identification.
+
+- **Flat miss distance distribution:** CEP50=374m with runs spanning 13m to
+  1255m indicates high variance. The long tail is driven by unfavorable
+  engagement geometries (head-on, tail-chase, extreme altitude error) where
+  the guidance cannot converge before motor burnout.
+
+## Code Architecture
+
+### File Responsibilities
+
+| File | Responsibility |
+|---|---|
+| `target.py` | `ManeuveringTarget` class — state integration, bang-bang maneuver logic |
+| `guidance.py` | Standalone PN functions + `GuidanceLaw` wrapper with lag and limiting |
+| `engagement.py` | Single engagement loop, missile EOM, CPA detection, plot/animate |
+| `monte_carlo.py` | 500-run loop, randomization, all analysis plots |
+| `test_guidance.py` | 8 unit/integration tests validating geometry through full engagement |
+
+### Data Flow — Single Engagement
+
+```
+run_engagement()
+│
+├── ManeuveringTarget(pos0, heading, speed, max_accel, seed)
+│   └── bang-bang lateral accel, RK4 integration, altitude hold
+│
+├── GuidanceLaw(variant, N, noise_std, accel_limit, tau, seed)
+│   └── wraps true_pn() / pure_pn() / augmented_pn()
+│
+└── Integration loop (while t < t_max):
+    │
+    ├── r_m, v_m = missile_state[0:3], missile_state[3:6]
+    ├── r_t, v_t = target.pos, target.vel
+    │
+    ├── GuidanceLaw.compute(r_m, r_t, v_m_eff, v_t, a_t, dt)
+    │   ├── true_pn() → compute_los_rate() → omega_perp
+    │   │              → a_cmd = N * Vc * omega_perp
+    │   │              → a_cmd[Z] = P-controller + gravity comp
+    │   ├── clip XY to accel_limit, clip Z to 0.5*accel_limit
+    │   └── first-order lag → a_achieved
+    │
+    ├── rk4_step(missile_derivatives, t, state, dt, a_achieved)
+    │   └── F_thrust + F_drag + F_gravity + a_lateral → state_dot
+    │
+    ├── target.step(dt)
+    │
+    ├── R = norm(r_t - r_m)
+    ├── update min_range, cpa_idx
+    └── check: hit / ground / seeker lost post-CPA
+```
+
+### Data Flow — Monte Carlo
+
+```
+monte_carlo.py __main__
+│
+├── run_monte_carlo(n_runs=500)
+│   └── for i in range(n_runs):
+│       ├── randomize_params(NOMINAL, rng) → params dict
+│       ├── run_engagement(**params) → result dict
+│       └── collect miss_distances[i], hit_flags[i]
+│
+├── plot_miss_histogram(miss_distances, hit_flags)
+├── plot_pn_comparison()     — re-runs MC 3x with PPN/TPN/APN
+├── plot_launch_envelope()   — sweeps range × elevation angle
+├── plot_pk_vs_range()       — sweeps launch range 0.5–9 km
+├── plot_sensitivity()       — sweeps N, target_accel, noise_std
+└── plot_ecm_comparison()    — nominal vs 5x seeker noise
+```
+
+### Key Functions
+
+**`compute_los_rate(r_m, r_t, v_m, v_t)`**
+Returns LOS rate vector ω (rad/s), LOS unit vector, range R, and closing
+velocity Vc. Core geometry used by all three PN variants.
+
+    ω = cross(los_hat, v_rel) / R
+    Vc = -dot(v_rel, los_hat)
+
+**`true_pn(r_m, r_t, v_m, v_t, N, noise_std, ...)`**
+Projects ω perpendicular to missile velocity, computes lateral acceleration
+command, overrides Z channel with P-controller. Returns `(a_cmd, seeker_valid)`.
+
+**`GuidanceLaw.compute(r_m, r_t, v_m, v_t, a_t, dt)`**
+Calls the appropriate PN function, clips XY and Z independently, applies
+first-order actuator lag. Returns `(a_achieved, seeker_valid)`.
+
+**`missile_derivatives(t, state, a_lateral)`**
+Point mass EOM. Thrust along velocity vector, drag along negative velocity
+vector, gravity downward, lateral acceleration added directly. Returns
+`state_dot = [vx, vy, vz, ax, ay, az]`.
+
+**`run_engagement(...)`**
+Orchestrates the integration loop. Returns a result dict containing
+`miss_distance`, `hit`, `t_cpa`, and full history arrays for trajectory
+plotting and animation.
+
+### Validation Tests (`test_guidance.py`)
+
+All 8 tests pass. Actual results from last run:
+
+| Test | What it checks | Result |
+|---|---|---|
+| 1 | LOS geometry — correct range, unit vector components | Range 500.0m, hat [0.6, 0.8, 0.0] ✓ |
+| 2 | Closing velocity — positive closing, negative diverging | Vc=300.0 m/s, div=-300.0 m/s ✓ |
+| 3 | PPN zero command on collision course (ω=0) | 0.0000 m/s² ✓ |
+| 4 | TPN seeker FOV — invalid for rear target, valid for forward | Both cases correct ✓ |
+| 5 | APN lateral command ≥ TPN when target is accelerating | TPN=0.00, APN=60.00 m/s² ✓ |
+| 6 | First-order lag convergence within 5s | Converged at 0.51s ✓ |
+| 7 | Stationary target miss distance < 350m | 156.8m ✓ |
+| 8 | TPN median miss ≤ 1.5× PPN median (20 runs) | TPN=319.6m, PPN=829.8m (2.6× improvement) ✓ |
+
+**Test 5 note:** TPN lateral command is 0.00 m/s² because the test geometry places
+missile and target at the same altitude on a head-on course — omega_perp is zero,
+so TPN produces no lateral command. APN correctly adds the target acceleration
+compensation term regardless. Not a bug — degenerate geometry for the TPN lateral
+channel.
+
+**Test 7 note:** 156.8m miss on a noiseless stationary target is driven entirely
+by the altitude controller overshooting from 10m launch altitude to 587m before
+correcting. Passes the <350m threshold. A proper 3D TPN implementation without
+the decoupled vertical channel would achieve near-zero miss on this case.
+
+## How to Recreate
+
+```
+cd D:/Weapons-systems-sim-pipeline/08_gnc_monte_carlo
+
+# Single engagement
+python src/engagement.py
+
+# Full Monte Carlo (all analyses, ~20 min)
+python src/monte_carlo.py
+
+# Validation tests
+python tests/test_guidance.py
+```
+
+Requires Project 04 `aero_interpolator.py` on sys.path (configured in engagement.py).
+
+## Repository Structure
+
+    08_gnc_monte_carlo/
+    ├── README_08_GNC_MonteCarlo.md
+    ├── src/
+    │   ├── target.py           # Maneuvering target model
+    │   ├── guidance.py         # PPN / TPN / APN guidance laws
+    │   ├── engagement.py       # Single engagement sim + animation
+    │   ├── monte_carlo.py      # 500-run Monte Carlo + all plots
+    │   └── fmea.py             # System-level FMEA, RPN analysis
+    ├── tests/
+    │   └── test_guidance.py    # 8 validation tests
+    └── results/
+        ├── miss_distances.npy
+        ├── hit_flags.npy
+        ├── fmea_table.csv
+        └── figures/
+            ├── single_engagement.png
+            ├── single_engagement.gif
+            ├── miss_distance_histogram.png
+            ├── pn_comparison.png
+            ├── launch_envelope.png
+            ├── pk_curve.png
+            ├── sensitivity.png
+            ├── ecm_comparison.png
+            └── fmea_table.png
