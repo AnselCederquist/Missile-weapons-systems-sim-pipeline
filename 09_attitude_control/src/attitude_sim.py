@@ -6,7 +6,7 @@ Extends Project 06 (6-DOF) with:
   - Quaternion attitude representation (replaces Euler angles)
   - Fin deflection model (actuator.py)
   - LQR attitude controller with dynamic pressure gain scheduling (lqr.py)
-  - Guidance interface from Project 08 TPN
+  - Guidance interface from Project 08 TPN  -OR-  Optimal Guidance Law (OGL)
 
 State vector (13 states):
   [0:3]   x, y, z         position (m, inertial frame)
@@ -14,10 +14,10 @@ State vector (13 states):
   [6:10]  q0, q1, q2, q3  quaternion (body-to-inertial, [w,x,y,z])
   [10:13] p, q_rate, r    angular rates (rad/s, body frame)
 
-Pipeline integration:
-  Project 04 -> CD(Mach, alpha) via aero_interpolator
-  Project 06 -> propulsion parameters, atmosphere model
-  Project 08 -> TPN guidance law (a_cmd -> desired attitude)
+Guidance options (set GUIDANCE_MODE at top of run_attitude_sim):
+  'TPN'  -- True Proportional Navigation from Project 08
+  'OGL'  -- Optimal Guidance Law (zero-effort miss / t_go^2)
+             Directly addresses TPN kinematic floor at high closing velocity.
 """
 
 import sys
@@ -56,7 +56,7 @@ from lqr import LQRController
 
 
 # ---------------------------------------------------------------
-# Missile parameters (consistent with Project 06)
+# Missile parameters
 # ---------------------------------------------------------------
 MASS_LAUNCH          = 20.0
 MASS_BURNOUT         = 15.0
@@ -70,12 +70,17 @@ RHO0                 = 1.225
 H_SCALE              = 8500.0
 SPEED_OF_SOUND       = 343.0
 CD0                  = 0.3
-CN_ALPHA             = 4.0       # normal force coefficient /rad
-ALPHA_CLAMP_DEG      = 8.0       # guidance alpha command clamp (deg)
-BETA_CLAMP_DEG       = 8       # guidance beta command clamp (deg)
-AERO_ALPHA_CLAMP_DEG = 10.0      # aerodynamic AoA clamp in derivatives (deg)
-GRAV_COMP_BELOW      = 1.0       # G multiplier when missile below target altitude
-GRAV_COMP_ABOVE      = 0.0       # G multiplier when missile above target altitude
+CN_ALPHA             = 4.0
+ALPHA_CLAMP_DEG      = 8.0
+BETA_CLAMP_DEG       = 8.0
+AERO_ALPHA_CLAMP_DEG = 10.0
+GRAV_COMP_BELOW      = 1.0
+GRAV_COMP_ABOVE      = 0.0
+
+# OGL parameters
+OGL_N           = 6.0    # navigation constant (higher = more aggressive)
+OGL_T_GO_MIN    = 0.15   # minimum t_go (s) — prevents gain singularity at CPA
+OGL_ACCEL_LIMIT = 40.0   # m/s^2 — acceleration command limit
 
 
 def atmosphere(alt):
@@ -106,6 +111,62 @@ def missile_mass(t):
 
 
 # ---------------------------------------------------------------
+# Optimal Guidance Law
+# ---------------------------------------------------------------
+
+def compute_ogl(pos, r_t, vel_m, vel_t, N=OGL_N, t_go_min=OGL_T_GO_MIN):
+    """
+    Optimal Guidance Law (OGL) — zero-effort miss formulation.
+
+    Command: a_cmd = (N / t_go^2) * ZEM
+    where:   ZEM   = r_rel + t_go * v_rel   (zero-effort miss vector)
+             t_go  = R / V_closing           (time-to-go estimate)
+
+    Unlike TPN, command magnitude grows as t_go shrinks — automatically
+    aggressive in the terminal phase. This directly addresses the kinematic
+    floor observed with TPN at high closing velocity.
+
+    Parameters
+    ----------
+    pos   : missile position (m, inertial)
+    r_t   : target position (m, inertial)
+    vel_m : missile velocity (m/s, inertial)
+    vel_t : target velocity (m/s, inertial)
+    N     : navigation constant (default OGL_N)
+    t_go_min : minimum t_go to prevent singularity (s)
+
+    Returns
+    -------
+    a_cmd : acceleration command (m/s^2, inertial)
+    valid : bool
+    """
+    r_rel = r_t - pos
+    v_rel = vel_t - vel_m
+    R     = np.linalg.norm(r_rel)
+
+    if R < 1.0:
+        return np.zeros(3), False
+
+    r_hat = r_rel / R
+    V_c   = -np.dot(v_rel, r_hat)   # closing velocity (positive when closing)
+
+    if V_c < 1.0:
+        return np.zeros(3), False
+
+    t_go  = max(R / V_c, t_go_min)
+    ZEM   = r_rel + t_go * v_rel    # zero-effort miss vector
+
+    a_cmd = (N / t_go**2) * ZEM
+
+    # Clamp magnitude
+    a_mag = np.linalg.norm(a_cmd)
+    if a_mag > OGL_ACCEL_LIMIT:
+        a_cmd = a_cmd * OGL_ACCEL_LIMIT / a_mag
+
+    return a_cmd, True
+
+
+# ---------------------------------------------------------------
 # Equations of motion
 # ---------------------------------------------------------------
 
@@ -129,13 +190,11 @@ def derivatives(t, state, fin_deflections):
     alpha, beta = compute_aoa_sideslip(vel_b)
     cd = get_cd(mach, np.degrees(alpha))
 
-    # Forces
     vel_hat_i  = vel_i / max(np.linalg.norm(vel_i), 0.1)
     F_drag_i   = -cd * q_bar * S_REF * vel_hat_i
     F_grav_i   = np.array([0.0, 0.0, -mass * G])
     F_thrust_i = R_bi @ np.array([thrust, 0.0, 0.0])
 
-    # Normal force — perpendicular to velocity (pure lift, no energy injection)
     alpha_f = np.clip(alpha, -np.radians(AERO_ALPHA_CLAMP_DEG), np.radians(AERO_ALPHA_CLAMP_DEG))
     beta_f  = np.clip(beta,  -np.radians(AERO_ALPHA_CLAMP_DEG), np.radians(AERO_ALPHA_CLAMP_DEG))
     F_normal_b = np.array([0.0,
@@ -146,13 +205,11 @@ def derivatives(t, state, fin_deflections):
         F_normal_b -= np.dot(F_normal_b, v_hat_b) * v_hat_b
     F_normal_i = R_bi @ F_normal_b
 
-    # Induced drag from AoA
     cd_induced = 0.1 * (alpha_f**2 + beta_f**2)
     F_drag_i   = F_drag_i * (1.0 + cd_induced / max(cd, 0.01))
 
     acc_i = (F_thrust_i + F_drag_i + F_grav_i + F_normal_i) / mass
 
-    # Moments and angular acceleration
     p_r, q_r, r_r = omega
     moments   = compute_moments(fin_deflections, alpha, beta, p_r, q_r, r_r, q_bar, V)
     omega_dot = compute_angular_acceleration(moments, p_r, q_r, r_r)
@@ -191,12 +248,8 @@ def flight_path_attitude(vel_i):
                      np.arctan2(v[1], v[0])])
 
 
-def guidance_to_attitude(vel_i, a_cmd, t, pos, q_current=None, target_alt=500.0, r_t=None):
-    """
-    Convert TPN acceleration command to desired Euler angles.
-    Gravity compensation only applied when missile is below target altitude
-    to prevent sustained over-climb.
-    """
+def guidance_to_attitude(vel_i, a_cmd, t, pos, q_current=None,
+                         target_alt=500.0, r_t=None):
     V = np.linalg.norm(vel_i)
     if V < 10.0:
         return flight_path_attitude(vel_i)
@@ -212,28 +265,28 @@ def guidance_to_attitude(vel_i, a_cmd, t, pos, q_current=None, target_alt=500.0,
     if denom < 10.0:
         return np.array([0.0, theta_fpa, psi_fpa])
 
-    # Rotate guidance command to body frame
     if q_current is not None:
         R_bi = quat_to_rotmat(quat_norm(q_current))
         a_b  = R_bi.T @ a_cmd
     else:
         a_b = a_cmd.copy()
 
-    # Gravity compensation: only when below target altitude
     grav_comp = G * GRAV_COMP_BELOW if pos[2] < target_alt else G * GRAV_COMP_ABOVE
     a_cmd_z   = a_b[2] + grav_comp
 
-    alpha_cmd = np.clip(mass * a_cmd_z / denom,
-                        -np.radians(ALPHA_CLAMP_DEG), np.radians(ALPHA_CLAMP_DEG))
-    beta_cmd  = np.clip(mass * a_b[1]  / denom,
-                        -np.radians(BETA_CLAMP_DEG),  np.radians(BETA_CLAMP_DEG))
+    r_norm_now = np.linalg.norm(r_t - pos) if r_t is not None else 999.0
+    clamp_deg  = 12.0 if r_norm_now < 300.0 else ALPHA_CLAMP_DEG
+    alpha_cmd  = np.clip(mass * a_cmd_z / denom,
+                         -np.radians(clamp_deg), np.radians(clamp_deg))
+    beta_cmd   = np.clip(mass * a_b[1]  / denom,
+                         -np.radians(clamp_deg), np.radians(clamp_deg))
 
-    # Terminal blend: when within 500m, mix in direct LOS correction
+    # Terminal blend: within 500m mix in direct LOS correction
     if r_t is not None:
-        r_vec = r_t - pos
+        r_vec  = r_t - pos
         r_norm = np.linalg.norm(r_vec)
         if r_norm < 500.0:
-            blend = (500.0 - r_norm) / 500.0
+            blend     = (500.0 - r_norm) / 500.0
             los_theta = np.arctan2(r_vec[2], np.sqrt(r_vec[0]**2 + r_vec[1]**2))
             los_psi   = np.arctan2(r_vec[1], r_vec[0])
             alpha_los = np.clip(los_theta - theta_fpa,
@@ -253,6 +306,7 @@ def guidance_to_attitude(vel_i, a_cmd, t, pos, q_current=None, target_alt=500.0,
 def run_attitude_sim(
     launch_angle_deg = 21.2,
     target_pos       = None,
+    guidance_mode    = 'HYBRID',    # 'TPN', 'OGL', or 'HYBRID'
     use_guidance     = True,
     dt               = 0.01,
     t_max            = 60.0,
@@ -274,9 +328,13 @@ def run_attitude_sim(
     actuator   = FinActuator()
     controller = LQRController(q_bar=50000.0)
 
+    tpn_guidance = None
     if use_guidance and USE_GUIDANCE:
-        guidance = GuidanceLaw(variant='TPN', N=4.0, noise_std=0.0,
-                               accel_limit=10.0, tau=0.1)
+        tpn_guidance = GuidanceLaw(variant='TPN', N=4.0, noise_std=0.0,
+                                   accel_limit=10.0, tau=0.1)
+
+    target = None
+    if use_guidance and USE_GUIDANCE:
         target = ManeuveringTarget(
             pos0=target_pos,
             heading_deg=180.0,
@@ -284,8 +342,6 @@ def run_attitude_sim(
             max_accel=0.0,
             seed=42
         )
-    else:
-        guidance = target = None
 
     hist = {k: [] for k in
             ['t','pos','vel','euler','omega','fin','a_cmd','euler_des','mach','qbar','range']}
@@ -301,12 +357,16 @@ def run_attitude_sim(
     last_gs_time  = 0.0
 
     if verbose:
-        tpn_n = guidance.N if guidance is not None and hasattr(guidance, 'N') else 'N/A'
+        tpn_n = tpn_guidance.N if tpn_guidance is not None else 'N/A'
         print(f"{'='*60}")
         print(f"Project 09 — Attitude Control Simulation")
         print(f"{'='*60}")
         print(f"Launch angle: {launch_angle_deg}°  |  Target: {target_pos}")
-        print(f"v0={v0}m/s  CONTROL_START={CONTROL_START}s  TAU_DES={TAU_DES}s  TPN N={tpn_n}")
+        print(f"Guidance: {guidance_mode}" +
+              (f"  TPN N={tpn_n}" if guidance_mode == 'TPN' else
+               f"  OGL N={OGL_N}  t_go_min={OGL_T_GO_MIN}s  accel_limit={OGL_ACCEL_LIMIT}m/s²"
+               + (f"  switch R=200m" if guidance_mode == 'HYBRID' else '')))
+        print(f"v0={v0}m/s  CONTROL_START={CONTROL_START}s  TAU_DES={TAU_DES}s")
         print(f"CN_ALPHA={CN_ALPHA}  guidance_clamp=±{ALPHA_CLAMP_DEG}°  "
               f"aero_clamp=±{AERO_ALPHA_CLAMP_DEG}°")
         print(f"THRUST_BOOST={THRUST_BOOST}N  THRUST_SUSTAIN={THRUST_SUSTAIN}N  "
@@ -354,21 +414,39 @@ def run_attitude_sim(
                 pass
             last_gs_time = t
 
+        # Guidance command
         a_cmd = np.zeros(3)
-        if guidance is not None and target is not None:
-            a_out, valid = guidance.compute(pos, r_t, vel_i, target.vel,
-                                            getattr(target, 'accel', np.zeros(3)), dt)
-            if valid:
-                a_cmd = a_out
+        if use_guidance and t >= CONTROL_START:
+            vel_t   = target.vel if target is not None else np.zeros(3)
+            accel_t = getattr(target, 'accel', np.zeros(3))
+            if guidance_mode == 'TPN':
+                a_out, valid = tpn_guidance.compute(pos, r_t, vel_i, vel_t, accel_t, dt)
+                if valid:
+                    a_cmd = a_out
+            elif guidance_mode == 'OGL':
+                a_out, valid = compute_ogl(pos, r_t, vel_i, vel_t)
+                if valid:
+                    a_cmd = a_out
+            elif guidance_mode == 'HYBRID':
+                R_now = np.linalg.norm(r_t - pos)
+                if R_now < 200.0:
+                    a_out, valid = compute_ogl(pos, r_t, vel_i, vel_t)
+                else:
+                    a_out, valid = tpn_guidance.compute(pos, r_t, vel_i, vel_t, accel_t, dt)
+                if valid:
+                    a_cmd = a_out
 
         if t < CONTROL_START:
             fin_deflections = np.zeros(4)
             euler_des        = euler.copy()
             euler_smooth     = euler.copy()
         else:
+            tau_eff   = TAU_DES if R > 300.0 else 0.0
             euler_raw = guidance_to_attitude(vel_i, a_cmd, t, pos,
-                                             q_current=q, target_alt=target_alt, r_t=r_t)
-            alpha_s       = dt / (TAU_DES + dt)
+                                             q_current=q,
+                                             target_alt=target_alt,
+                                             r_t=r_t)
+            alpha_s       = dt / (tau_eff + dt) if tau_eff > 0.0 else 1.0
             euler_smooth += alpha_s * (euler_raw - euler_smooth)
             euler_des     = euler_smooth.copy()
 
@@ -389,7 +467,7 @@ def run_attitude_sim(
         hist['qbar'].append(q_bar)
         hist['range'].append(R)
 
-        if verbose and abs(t % 1.0) < dt:
+        if verbose and abs(t % 1.0) < dt * 1.5 and not (dt < 0.008 and abs(t % 1.0) > dt * 0.5):
             print(f"  t={t:5.1f}s  R={R:6.0f}m  V={V:5.0f}m/s  alt={alt:6.0f}m  "
                   f"θ={np.degrees(euler[1]):+6.1f}°  ψ={np.degrees(euler[2]):+5.1f}°  "
                   f"θdes={np.degrees(euler_des[1]):+5.1f}°  ψdes={np.degrees(euler_des[2]):+5.1f}°  "
@@ -397,8 +475,9 @@ def run_attitude_sim(
 
         if target is not None:
             target.step(dt)
-        state = rk4_step(t, state, fin_deflections, dt)
-        t += dt
+        dt_eff = dt / 2.0 if R < 300.0 else dt
+        state  = rk4_step(t, state, fin_deflections, dt_eff)
+        t += dt_eff
 
     for k in hist:
         hist[k] = np.array(hist[k])
@@ -423,7 +502,7 @@ def run_attitude_sim(
 # Plotting
 # ---------------------------------------------------------------
 
-def plot_results(result, save_dir=None):
+def plot_results(result, save_dir=None, title_suffix=''):
     hist = result['history']
     if len(hist['t']) == 0:
         return
@@ -436,7 +515,7 @@ def plot_results(result, save_dir=None):
     mach  = hist['mach']
 
     fig, axes = plt.subplots(3, 2, figsize=(14, 12))
-    fig.suptitle('Project 09 — Attitude Control Simulation', fontsize=13)
+    fig.suptitle(f'Project 09 — Attitude Control{title_suffix}', fontsize=13)
 
     axes[0,0].plot(pos[:,0]/1000, pos[:,2], 'b-', lw=1.5)
     axes[0,0].set_xlabel('Downrange (km)'); axes[0,0].set_ylabel('Altitude (m)')
@@ -482,7 +561,8 @@ def plot_results(result, save_dir=None):
     plt.tight_layout()
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
-        path = os.path.join(save_dir, 'attitude_sim.png')
+        fname = 'attitude_sim_ogl.png' if 'OGL' in title_suffix else 'attitude_sim.png'
+        path  = os.path.join(save_dir, fname)
         plt.savefig(path, dpi=150, bbox_inches='tight')
         print(f"Saved: {path}")
     plt.show()
@@ -496,14 +576,44 @@ def plot_results(result, save_dir=None):
 if __name__ == '__main__':
     RESULTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'results', 'figures')
 
-    result = run_attitude_sim(
+    # ---- OGL run ----
+    print("\n" + "="*60)
+    print("RUNNING: Hybrid TPN+OGL")
+    print("="*60)
+    result_ogl = run_attitude_sim(
         launch_angle_deg = 21.2,
         target_pos       = np.array([2500.0, 0.0, 500.0]),
+        guidance_mode    = 'HYBRID',
         use_guidance     = True,
         dt               = 0.01,
         t_max            = 60.0,
         verbose          = True,
         gain_schedule    = True,
     )
+    plot_results(result_ogl, save_dir=RESULTS_DIR, title_suffix=' — OGL')
 
-    plot_results(result, save_dir=RESULTS_DIR)
+    # ---- TPN run (baseline comparison) ----
+    print("\n" + "="*60)
+    print("RUNNING: TPN (baseline)")
+    print("="*60)
+    result_tpn = run_attitude_sim(
+        launch_angle_deg = 21.2,
+        target_pos       = np.array([2500.0, 0.0, 500.0]),
+        guidance_mode    = 'TPN',
+        use_guidance     = True,
+        dt               = 0.01,
+        t_max            = 60.0,
+        verbose          = True,
+        gain_schedule    = True,
+    )
+    plot_results(result_tpn, save_dir=RESULTS_DIR, title_suffix=' — TPN')
+
+    # ---- Summary ----
+    print("\n" + "="*60)
+    print("COMPARISON SUMMARY")
+    print("="*60)
+    print(f"  OGL miss distance: {result_ogl['miss_distance']:.1f} m  "
+          f"({'HIT' if result_ogl['hit'] else 'miss'})")
+    print(f"  TPN miss distance: {result_tpn['miss_distance']:.1f} m  "
+          f"({'HIT' if result_tpn['hit'] else 'miss'})")
+    print("="*60)

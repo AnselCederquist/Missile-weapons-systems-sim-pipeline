@@ -25,7 +25,7 @@ Q_BAR_NOM = 0.5 * RHO_NOM * V_NOM**2   # ~81,000 Pa
 
 # Default LQR weights — adjust here to tune
 DEFAULT_Q = [2.0, 2.0, 1.0, 15.0, 15.0, 15.0]   # [phi, theta, psi, p, q, r]
-DEFAULT_R = [40.0, 7.0, 30.0]                    # [delta_roll, delta_pitch, delta_yaw]
+DEFAULT_R = [40.0, 15.0, 30.0]                    # [delta_roll, delta_pitch, delta_yaw]
 
 
 def build_system_matrices(q_bar=Q_BAR_NOM):

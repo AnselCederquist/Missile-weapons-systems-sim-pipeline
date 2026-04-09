@@ -26,12 +26,25 @@ print("Running simulation...")
 result = run_attitude_sim(
     launch_angle_deg = 21.2,
     target_pos       = np.array([2500.0, 0.0, 500.0]),
+    guidance_mode    = 'TPN',
     use_guidance     = True,
     dt               = 0.01,
     t_max            = 60.0,
     verbose          = False,
     gain_schedule    = True,
 )
+
+result_hybrid = run_attitude_sim(
+    launch_angle_deg = 21.2,
+    target_pos       = np.array([2500.0, 0.0, 500.0]),
+    guidance_mode    = 'HYBRID',
+    use_guidance     = True,
+    dt               = 0.01,
+    t_max            = 60.0,
+    verbose          = False,
+    gain_schedule    = True,
+)
+pos_hybrid = result_hybrid['history']['pos']
 
 hist = result['history']
 pos  = hist['pos']    # (N, 3)
@@ -96,19 +109,24 @@ for dz in [-r_kill, 0, r_kill]:
 
 # Ghost trajectory (full path, faded)
 ax.plot(pos[:, 0], pos[:, 1], pos[:, 2],
-        color='#1a3a5e', linewidth=0.8, alpha=0.35, zorder=1)
+        color='#1a3a5e', linewidth=0.8, alpha=0.35, zorder=1, label='TPN')
+
+ax.plot(pos_hybrid[:, 0], pos_hybrid[:, 1], pos_hybrid[:, 2],
+        color='#2e6e2e', linewidth=0.8, alpha=0.35, zorder=1, label='HYBRID')
 
 # Animated elements
-trail_line,  = ax.plot([], [], [], color='#4da6ff', linewidth=1.8, alpha=0.95, zorder=5)
-missile_dot, = ax.plot([], [], [], 'o', color='#ffffff', markersize=5, zorder=6)
+trail_line,       = ax.plot([], [], [], color='#4da6ff', linewidth=1.8, alpha=0.95, zorder=5, label='TPN live')
+missile_dot,      = ax.plot([], [], [], 'o', color='#ffffff', markersize=5, zorder=6)
+trail_hybrid,     = ax.plot([], [], [], color='#44ff88', linewidth=1.8, alpha=0.95, zorder=5, label='HYBRID live')
+missile_dot_hyb,  = ax.plot([], [], [], 's', color='#aaffcc', markersize=5, zorder=6)
 telemetry    = ax.text2D(0.02, 0.96, '', transform=ax.transAxes,
                           color='#cccccc', fontsize=8, family='monospace',
                           verticalalignment='top')
-footer       = ax.text2D(0.02, 0.03,
-                          f'Miss: {result["miss_distance"]:.1f} m  |  '
-                          f'Peak Mach: {np.max(mach):.2f}  |  '
-                          f'Project 09 — Attitude Control',
-                          transform=ax.transAxes, color='#666666', fontsize=7)
+footer = ax.text2D(0.02, 0.03,
+                   f'TPN miss: {result["miss_distance"]:.1f}m  |  '
+                   f'HYBRID miss: {result_hybrid["miss_distance"]:.1f}m  |  '
+                   f'Peak Mach: {np.max(mach):.2f}',
+                   transform=ax.transAxes, color='#666666', fontsize=7)
 
 ax.legend(loc='upper right', framealpha=0.15, labelcolor='#cccccc',
           facecolor='#111111', edgecolor='#444444', fontsize=8)
@@ -122,23 +140,30 @@ def update(frame_idx):
     i     = frames[frame_idx]
     start = max(0, i - TRAIL_FRAMES * STEP)
 
+    # TPN trail
     trail_line.set_data(pos[start:i+1, 0], pos[start:i+1, 1])
     trail_line.set_3d_properties(pos[start:i+1, 2])
-
     missile_dot.set_data([pos[i, 0]], [pos[i, 1]])
     missile_dot.set_3d_properties([pos[i, 2]])
+
+    # HYBRID trail — clamp index to hybrid trajectory length
+    i_hyb  = min(i, len(pos_hybrid) - 1)
+    start_h = max(0, i_hyb - TRAIL_FRAMES * STEP)
+    trail_hybrid.set_data(pos_hybrid[start_h:i_hyb+1, 0], pos_hybrid[start_h:i_hyb+1, 1])
+    trail_hybrid.set_3d_properties(pos_hybrid[start_h:i_hyb+1, 2])
+    missile_dot_hyb.set_data([pos_hybrid[i_hyb, 0]], [pos_hybrid[i_hyb, 1]])
+    missile_dot_hyb.set_3d_properties([pos_hybrid[i_hyb, 2]])
 
     V = np.linalg.norm(hist['vel'][i])
     telemetry.set_text(
         f't = {t[i]:5.1f} s\n'
         f'V = {V:5.0f} m/s   M = {mach[i]:.2f}\n'
         f'alt = {pos[i, 2]:5.0f} m\n'
-        f'R = {hist["range"][i]:5.0f} m'
+        f'R_TPN = {hist["range"][i]:5.0f} m'
     )
 
-    # Slow camera rotation
     ax.view_init(elev=24, azim=-55 + frame_idx * 0.25)
-    return trail_line, missile_dot, telemetry
+    return trail_line, missile_dot, trail_hybrid, missile_dot_hyb, telemetry
 
 
 anim = FuncAnimation(fig, update, frames=len(frames), interval=40, blit=False)
