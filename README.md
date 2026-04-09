@@ -5,7 +5,7 @@
 
 ---
 
-> Full weapons system simulation pipeline: NACA airfoil aerodynamic study (XFLR5, 24-polar parametric sweep), Ti-6Al-4V fin assembly structural FEA under 10,000g setback (Ansys Mechanical, Richardson extrapolation, GCI), De Laval nozzle compressible CFD (density-based Fluent, isentropic validation, mesh convergence), missile aerodynamic database (Digital DATCOM), Extended Kalman Filter state estimation, 6-DOF flight mechanics simulator, coupled thermal-structural-vibration-fatigue analysis (Ansys Workbench), full missile assembly CAD (Onshape), and proportional navigation GNC with 500-run Monte Carlo engagement analysis. Eight projects, fully integrated pipeline.
+> Full weapons system simulation pipeline: NACA airfoil aerodynamic study (XFLR5, 24-polar parametric sweep), Ti-6Al-4V fin assembly structural FEA under 10,000g setback (Ansys Mechanical, Richardson extrapolation, GCI), De Laval nozzle compressible CFD (density-based Fluent, isentropic validation, mesh convergence), missile aerodynamic database (Digital DATCOM), Extended Kalman Filter state estimation, 6-DOF flight mechanics simulator, coupled thermal-structural-vibration-fatigue analysis (Ansys Workbench), full missile assembly CAD (Onshape), proportional navigation GNC with 500-run Monte Carlo engagement analysis, 13-state quaternion attitude control simulator with CARE-solved LQR and TPN/OGL/HYBRID guidance modes, three-loop acceleration autopilot, IR/RF seeker model, fragmentation lethality model, and launch envelope calculator. Thirteen projects, fully integrated pipeline.
 
 ---
 
@@ -130,6 +130,56 @@ weapons-systems-sim-pipeline/
 │           ├── sensitivity.png
 │           └── ecm_comparison.png
 │
+├── 09_attitude_control/            # Project 09 — Attitude Control Simulator
+│   ├── README_09_AttitudeControl.md
+│   ├── src/
+│   │   ├── attitude_sim.py
+│   │   ├── lqr.py
+│   │   ├── actuator.py
+│   │   ├── quaternion.py
+│   │   ├── animate_3d.py
+│   │   └── pd_controller_reference.py
+│   └── results/
+│       └── figures/
+│           ├── attitude_sim.png
+│           ├── attitude_sim_ogl.png
+│           └── engagement_3d.gif
+│
+├── 10_autopilot/                   # Project 10 — Three-Loop Acceleration Autopilot [IN PROGRESS]
+│   ├── README_10_Autopilot.md
+│   ├── src/
+│   │   ├── autopilot.py
+│   │   ├── autopilot_sim.py
+│   │   └── compare_lqr.py
+│   └── results/
+│       └── figures/
+│
+├── 11_seeker_model/                # Project 11 — IR/RF Seeker Model [IN PROGRESS]
+│   ├── README_11_Seeker.md
+│   ├── src/
+│   │   ├── seeker.py
+│   │   ├── gimbal.py
+│   │   └── track_loop.py
+│   └── results/
+│       └── figures/
+│
+├── 12_lethality/                   # Project 12 — Fragmentation Lethality Model [IN PROGRESS]
+│   ├── README_12_Lethality.md
+│   ├── src/
+│   │   ├── warhead.py
+│   │   ├── fragment_pattern.py
+│   │   └── pk_calculator.py
+│   └── results/
+│       └── figures/
+│
+├── 13_launch_envelope/             # Project 13 — Launch Envelope Calculator [IN PROGRESS]
+│   ├── README_13_LaunchEnvelope.md
+│   ├── src/
+│   │   ├── envelope.py
+│   │   └── pk_contour.py
+│   └── results/
+│       └── figures/
+│
 ├── cad/                            # Full Missile Assembly CAD
 │   ├── README_CAD.md
 │   ├── assembly/
@@ -244,6 +294,86 @@ Proportional navigation guidance law implementation, 500-run Monte Carlo engagem
 
 ---
 
+### 09 · Attitude Control Simulator
+
+13-state attitude control simulator extending Project 06 with quaternion attitude representation, 4-fin actuator model, CARE-solved LQR attitude controller with dynamic pressure gain scheduling, and TPN/OGL/HYBRID guidance modes. Full inner/outer loop architecture with complete development methodology documentation including failed approaches (hybrid PD+LQR, pure OGL, engagement geometry sensitivity). Includes a PD controller reference implementation for comparison.
+
+**Tools:** Python (NumPy, SciPy, Matplotlib)
+
+**Key result:** 35.7m miss distance against a stationary target at 2500m range, 500m altitude. Peak Mach 1.67, 14.4s flight time, CPA altitude 512m. TPN and HYBRID (TPN+OGL) guidance modes produce identical results — confirmed the residual miss is a kinematic floor, not a guidance or control quality problem. LQR tracks desired attitude to within 1° throughout the engagement. 17 validation tests across all subsystems pass.
+
+**Controller architecture:**
+- Quaternion kinematics replacing Euler angles (eliminates gimbal lock)
+- CARE-solved LQR: Q = diag([2,2,1,15,15,15]), R = diag([40,15,30])
+- Dynamic pressure gain scheduling every 1s
+- Gravity compensation below target altitude, guidance clamp ±8° (±12° inside 300m)
+- First-order attitude smoother τ=0.2s (disabled inside 300m)
+- Terminal phase LOS blend within 500m
+- OGL (zero-effort miss / t_go²) available as alternative guidance law
+- HYBRID mode: TPN midcourse, OGL terminal at 200m switch radius
+
+---
+
+### 10 · Three-Loop Acceleration Autopilot *(in progress)*
+
+Industry-standard three-loop missile autopilot: inner angular rate loop, middle body acceleration loop, outer guidance loop. Directly comparable to the LQR from Project 09 on the same engagement geometry. Designed to demonstrate the physically grounded alternative to optimal control that appears in real tactical missile programs.
+
+**Planned architecture:**
+- Inner loop: rate gyro feedback, fin command shaping
+- Middle loop: accelerometer feedback, normal acceleration tracking
+- Outer loop: guidance acceleration demand from TPN/OGL
+- Gain scheduling vs dynamic pressure and Mach
+- Direct comparison against Project 09 LQR miss distance
+
+**Tools:** Python (NumPy, SciPy, Matplotlib)
+
+---
+
+### 11 · IR/RF Seeker Model *(in progress)*
+
+Seeker model with gimbal dynamics, track loop, noise sources (thermal noise, glint, clutter), and seeker saturation. Closes the gap in the current pipeline where perfect LOS measurement is assumed. Feeds directly into the Project 08/09 guidance laws to replace the ideal sensor.
+
+**Planned architecture:**
+- Gimbal dynamics (rate loop, position limits, slew rate)
+- Track loop (proportional-integral LOS rate estimator)
+- Noise model (additive Gaussian + glint at short range)
+- Seeker saturation and lock-loss detection
+- Monte Carlo over seeker noise — Pk vs noise floor curves
+
+**Tools:** Python (NumPy, SciPy, Matplotlib)
+
+---
+
+### 12 · Fragmentation Lethality Model *(in progress)*
+
+Warhead fragmentation model using Gurney equation for initial fragment velocity and Mott distribution for fragment count and mass. Computes lethal area as a function of miss distance and target vulnerability. Ties the 35.7m miss distance from Project 09 to an actual probability of kill number, closing the kill chain from launch through lethality assessment.
+
+**Planned architecture:**
+- Gurney equation: fragment velocity vs charge-to-metal ratio
+- Mott distribution: fragment count and mass statistics
+- Fragment pattern: spatial distribution vs fuze delay and intercept geometry
+- Target vulnerability model: presented area, vulnerable area fraction
+- Pk(miss distance) curve integrated with Project 09 engagement results
+
+**Tools:** Python (NumPy, SciPy, Matplotlib)
+
+---
+
+### 13 · Launch Envelope Calculator *(in progress)*
+
+Given target kinematics (speed, heading, altitude, maneuver capability), compute the valid launch zone with Pk contours. Extends the single-trajectory analysis of Projects 08/09 to a full engagement envelope. Standard deliverable in missile systems engineering — shows where a shooter must be to achieve a required Pk against a defined target.
+
+**Planned architecture:**
+- Target state parameterization (speed, heading, altitude, g-load)
+- Launch geometry sweep (range, bearing, altitude differential)
+- Per-geometry engagement simulation using Projects 08/09 pipeline
+- Pk contour generation using Project 12 lethality model
+- No-escape zone (NEZ) and favorable engagement zone (FEZ) boundaries
+
+**Tools:** Python (NumPy, SciPy, Matplotlib)
+
+---
+
 ## Integrated Pipeline
 
 ```
@@ -269,13 +399,26 @@ Python IMU+GPS
 Python RK4 EOM                                  (aeroheating input)
       │
       ▼
-[Project 08]
-GNC / Monte Carlo
-PN Guidance + CEP + Pk
-
-[CAD Assembly]
-Onshape — all geometry
-consistent with Projects 02–07
+[Project 08]──────────────────────────────────────────────────────┐
+GNC / Monte Carlo                                                  │
+PN Guidance + CEP                                                  │
+      │                                                            │
+      ▼                                                            │
+[Project 09]              [Project 10]          [Project 11]      │
+Attitude Control   →   Three-Loop Autopilot  +  Seeker Model  ────┤
+LQR + Quaternion       (compare vs LQR)         Gimbal + Noise    │
+TPN / OGL / HYBRID                                                 │
+      │                                                            │
+      └──────────────────────────────────────────────────────────→│
+                                                                   ▼
+                                                        [Project 12]
+                                                        Lethality Model
+                                                        Gurney + Mott + Pk
+                                                                   │
+                                                                   ▼
+                                                        [Project 13]
+                                                        Launch Envelope
+                                                        NEZ / FEZ / Pk contours
 ```
 
 ---
@@ -301,6 +444,7 @@ matplotlib>=3.7
 pandas>=2.0
 jupyter>=1.0
 pytest>=7.0
+pillow>=9.0
 ```
 
 **External tools (all free):**
