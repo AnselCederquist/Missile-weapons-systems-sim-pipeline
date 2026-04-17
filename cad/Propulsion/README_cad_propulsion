@@ -1,0 +1,157 @@
+# Propulsion Section — CAD Assembly & Internal Ballistics Validation
+
+## Overview
+
+The propulsion subsystem consists of a steel motor case, ablative insulation liner, dual-grain boost-sustain assembly (finocyl boost + BATES sustain), forward and aft closures, and a De Laval nozzle. All components were designed to fit within the fixed 100mm body tube OD while providing realistic internal ballistics validated in openMotor. The design maintains consistency with the overall missile simulation pipeline.
+
+---
+
+## Pipeline Integration
+
+| Source | Data |
+|--------|------|
+| Project 02 | Fin assembly FEA — fin geometry and dovetail dimensions consistent with fin/actuator section (66–146mm) |
+| Project 03 | Nozzle flow physics and CFD methodology validation (Ae/A* = 16.67) |
+| Project 04 | Body tube OD constraint (100mm) — strictly limits maximum nozzle exit diameter |
+| Project 06 | Target thrust profile (3000N boost / 800N sustain) and propellant mass assumption used for 6-DOF trajectory |
+| Project 09 | Propulsion model used in the 13-state quaternion attitude control simulator |
+
+---
+
+## Motor Case Dimensions
+
+- **Motor case:** OD 90mm, wall 3mm, ID 84mm (steel)
+- **Insulation liner:** 1mm ablative on ID
+- **Grain OD:** 84mm case ID − 2 × 1mm insulation = **82mm**
+- **Grain housing:** x=146mm to x=782mm (636mm total, 596mm effective grain length after forward closure)
+- **Full missile zone layout:** see `cad/README_CAD.md`
+
+---
+
+## Grain Geometry
+
+### Boost Grain (Grain 1) — Finocyl
+
+| Parameter | Value |
+|---|---|
+| Type | Finocyl |
+| Length | 180mm |
+| Core diameter | 38mm |
+| Fins | 6 × 8mm width × 10mm length |
+| Inhibited ends | Both |
+| Web thickness | ~14mm |
+| Mass | ~1.30 kg |
+
+### Sustain Grain (Grain 2) — BATES
+
+| Parameter | Value |
+|---|---|
+| Type | BATES (cylindrical bore, no fins) |
+| Length | 416mm |
+| Core diameter | 38mm |
+| Inhibited ends | Both |
+| Web thickness | ~23mm |
+| Mass | ~3.14 kg |
+
+The boost grain uses a finocyl geometry — smaller core and fins for high initial burning surface area, producing the peak thrust phase. The sustain grain uses a BATES geometry — plain cylindrical bore with no fins — which produces a neutral burn profile (approximately constant surface area as the grain regresses). This matches the Project 06 constant 800N sustain thrust assumption more accurately than a finned geometry. The boost-sustain dual-grain architecture is standard in tactical missile motors.
+
+---
+
+## Nozzle
+
+| Parameter | Value |
+|---|---|
+| Throat diameter | 25mm |
+| Exit diameter | 60mm |
+| Ae/A* | 5.76 |
+| Efficiency | 0.95 |
+| Divergence half-angle | 15° |
+| Convergence half-angle | 30° |
+| Inlet spigot length | 66mm (full aft closure depth) |
+| Total nozzle length | ~155mm |
+
+### Nozzle Tradeoff vs. Project 03
+
+Project 03 validated nozzle CFD methodology at Ae/A* = 16.67 under unconstrained demonstration conditions (P₀ = 9.8 MPa, T₀ = 3710 K). For the tactical motor, the exit diameter is limited to 60mm to fit inside the 100mm body tube OD fixed by Project 04. At a 25mm throat, Ae/A* = 16.67 would require a ~102mm exit — exceeding the body diameter. The chosen Ae/A* = 5.76 is a practical sea-level packaging tradeoff that maintains positive thrust coefficient. Project 03 remains a valid high-fidelity CFD reference independent of the tactical motor packaging constraints.
+
+---
+
+## openMotor Internal Ballistics Validation
+
+### Propellant Properties — Custom 68/18/14 HTPB/AP/Al
+
+| Property | Value |
+|---|---|
+| Density | 1750 kg/m³ |
+| Burn rate coefficient (a) | 0.045 mm/(s·Paⁿ) |
+| Burn rate exponent (n) | 0.35 |
+| Specific heat ratio (γ) | 1.25 |
+| Combustion temperature | 3500 K |
+| Exhaust molar mass | 25.0 g/mol |
+| Pressure range | 1–25 MPa |
+
+Properties sourced from Sutton & Biblarz, *Rocket Propulsion Elements*, 9th ed. The burn rate coefficient is modestly elevated relative to nominal literature values to ensure reliable ignition pressure build-up in the 0-D model. Equilibrium performance remains representative of tactical-class aluminized composite propellant.
+
+### Simulation Results
+
+| Parameter | openMotor Result | Project 06 Assumption | Notes |
+|---|---|---|---|
+| Burn time | 2.04s | 15s | Physical web thickness limit |
+| Propellant mass | 4.44 kg | 5.0 kg | 89% of assumption — good match |
+| Peak pressure | 9.82 MPa | ~7 MPa assumed | Within realistic range |
+| Average pressure | 7.13 MPa | — | — |
+| Impulse | 10,242 Ns | — | — |
+| Delivered Isp (sea level) | 235.2s | — | Realistic for HTPB/AP/Al |
+| Delivered Ct | 1.43 | — | Positive, no separation errors |
+| Volume loading | 76.82% | — | Excellent packing efficiency |
+| Peak mass flux | 1586 kg/(m²·s) | — | Within tactical motor range |
+
+### Thrust Curve
+
+The thrust curve shows a clear two-phase profile — peak thrust during Grain 1 (finocyl boost, t=0 to ~0.75s) followed by a step down to a lower, approximately flat sustain plateau during Grain 2 (BATES sustain, t=0.75s to ~2.04s). The BATES neutral burn geometry closely approximates the constant 800N sustain assumption used in Project 06.
+
+### Burn Time Delta — Engineering Explanation
+
+Project 06 employed a simplified step-function thrust profile (3000N boost 2s, 800N sustain 13s, 15s total, 5 kg propellant) to enable efficient coupling across 6-DOF trajectory, aerodynamic, thermal-structural, and attitude control simulations. The detailed openMotor model reveals that the maximum radial web thickness achievable in the 84mm grain OD is only ~23mm for the BATES sustain grain. With realistic HTPB/AP/Al regression rates (8–12 mm/s at operating pressure), total burn time is physically limited to ~2s.
+
+A 15s sustain would require a ~120mm web — a negative core diameter in any grain that fits the motor case. Real tactical missiles in the 100mm class commonly have short burn times of 1–4s. Longer sustain requires a larger motor diameter (which would invalidate the Project 04 aero database) or advanced multi-segment / low-regression designs. The Project 06 simplified model remains valid for trajectory, thermal, and attitude control coupling. The openMotor results validate the physical grain design, confirm the boost-sustain thrust architecture, and document the real internal ballistics constraints.
+
+Propellant mass (4.44 kg vs 5.0 kg assumed) and thrust curve shape are in close agreement with Project 06 inputs — the primary delta is burn duration, which is a known and documented modeling assumption.
+
+---
+
+## Limitations
+
+**0-D ballistics model.** openMotor uses a lumped-parameter approach. Full 3-D erosive burning, slag accumulation, and grain deformation are not modeled.
+
+**Propellant approximation.** The custom HTPB/AP/Al entry is representative of the propellant class but not calibrated to a specific certified formulation. Real tactical propellant data is export-controlled.
+
+**Static sea-level conditions.** Chamber pressure and thrust are computed at sea-level ambient (101325 Pa). Altitude effects on delivered thrust are captured in Project 06 trajectory integration.
+
+**Ignition transients.** openMotor assumes instantaneous full-surface ignition. Start-up transients and tail-off behavior are approximated.
+
+**Minor warnings.** Peak mass flux warning was observed but does not affect positive thrust production or simulation validity.
+
+---
+
+## Files
+
+    cad/propulsion/
+    ├── tactical_motor_boost_sustain.ric    — openMotor motor file
+    ├── thrust_curve.png                    — openMotor simulation output
+    └── README_CAD_Propulsion.md            — this file
+
+    cad/assembly/
+    └── Rocket_Assembly.x_t                 — full missile assembly
+
+    cad/parts/
+    ├── Rocket_body_tube.x_t
+    ├── Rocket_Cone_Tip(forAssembly).x_t
+    ├── Rocket_Fin.x_t
+    └── Exhaust_Nozzle_scaled(forAssembly).x_t
+
+## Tools
+
+- **Onshape** — propulsion section CAD assembly and grain geometry
+- **openMotor v0.6.1** — internal ballistics simulation (github.com/reilleya/openMotor)
+- **Reference:** Sutton & Biblarz, *Rocket Propulsion Elements*, 9th ed.

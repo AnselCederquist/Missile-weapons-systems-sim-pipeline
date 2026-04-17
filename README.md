@@ -139,46 +139,57 @@ weapons-systems-sim-pipeline/
 │   │   ├── quaternion.py
 │   │   ├── animate_3d.py
 │   │   └── pd_controller_reference.py
+│   │   ├── tune_attitude.py
 │   └── results/
 │       └── figures/
 │           ├── attitude_sim.png
 │           ├── attitude_sim_ogl.png
 │           └── engagement_3d.gif
 │
-├── 10_autopilot/                   # Project 10 — Three-Loop Acceleration Autopilot [IN PROGRESS]
+├── 10_autopilot/                   # Project 10 — Three-Loop Acceleration Autopilot
 │   ├── README_10_Autopilot.md
 │   ├── src/
 │   │   ├── autopilot.py
 │   │   ├── autopilot_sim.py
-│   │   └── compare_lqr.py
+│   │   ├── compare_lqr.py
+│   │   └── tune_autopilot.py
 │   └── results/
 │       └── figures/
+│           ├── autopilot_sim_—_Three-Loop.png
+│           └── engagement_3d.gif
 │
-├── 11_seeker_model/                # Project 11 — IR/RF Seeker Model [IN PROGRESS]
+├── 11_seeker_model/                # Project 11 — IR/RF Seeker Model
 │   ├── README_11_Seeker.md
 │   ├── src/
 │   │   ├── seeker.py
-│   │   ├── gimbal.py
-│   │   └── track_loop.py
+│   │   └── seeker_sim.py
 │   └── results/
+│       ├── seeker_miss_distances.pkl
 │       └── figures/
+│           └── seeker_monte_carlo.png
 │
-├── 12_lethality/                   # Project 12 — Fragmentation Lethality Model [IN PROGRESS]
+├── 12_lethality/                   # Project 12 — Fragmentation Lethality Model
 │   ├── README_12_Lethality.md
 │   ├── src/
-│   │   ├── warhead.py
-│   │   ├── fragment_pattern.py
-│   │   └── pk_calculator.py
+│   │   ├── lethality.py
+│   │   └── lethality_sim.py
 │   └── results/
 │       └── figures/
+│           ├── lethality_sensitivity.png
+│           ├── pk_vs_miss.png
+│           └── system_pk_overlay.png
 │
-├── 13_launch_envelope/             # Project 13 — Launch Envelope Calculator [IN PROGRESS]
+├── 13_launch_envelope/             # Project 13 — Launch Envelope Calculator
 │   ├── README_13_LaunchEnvelope.md
 │   ├── src/
-│   │   ├── envelope.py
-│   │   └── pk_contour.py
+│   │   ├── launch_envelope.py
+│   │   └── envelope_sim.py
 │   └── results/
 │       └── figures/
+│           ├── envelope_comparison.png
+│           ├── envelope_miss_Non-maneuvering.png
+│           ├── envelope_pk_3g_maneuver.png
+│           └── envelope_pk_Non-maneuvering.png
 │
 ├── cad/                            # Full Missile Assembly CAD
 │   ├── README_CAD.md
@@ -195,6 +206,10 @@ weapons-systems-sim-pipeline/
 │       ├── Rocket_Fin.pdf
 │       ├── Rocket_Body_tube.pdf
 │       └── Nose_Cone(forAssembly).pdf
+│   ├── propulsion/
+│   │   ├── tactical_motor_boost_sustain.ric
+│   │   ├── thrust_curve.png
+│   │   └── README_CAD_Propulsion.md
 │
 ├── requirements.txt
 └── README.md
@@ -282,6 +297,14 @@ Full tactical missile assembly in Onshape. All dimensions consistent with the si
 
 **Key features:** 100mm OD body, 1000mm length, 4× fin dovetail attachment, nozzle counterbore, bulkheads at x=250/420mm, nose cone spigot interface. XCG=500mm, XCP=750mm, static margin 25% body length consistent with Projects 04/06. Engineering drawings for all parts in `cad/drawings/`. GD&T applied to fin assembly and nose cone — tolerances tied directly to Project 02 and 07 FEA boundary conditions and critical stress/thermal locations.
 
+### Propulsion Section — CAD Assembly & Internal Ballistics Validation
+
+Dual-grain propulsion section modeled in Onshape and validated using openMotor v0.6.1 internal ballistics simulation. Finocyl boost grain (180mm, 38mm core) and BATES sustain grain (416mm, 38mm core) share a 25mm throat / 60mm exit nozzle (Ae/A* = 5.76). Propellant: custom 68/18/14 HTPB/AP/Al composite (a=0.045 mm/(s·Paⁿ), n=0.35, Tc=3500K). Thrust curve shows clear two-phase profile — finocyl boost peak followed by BATES neutral-burn sustain plateau, closely matching the Project 06 step-function assumption.
+
+**Key results:** 2.04s burn time, 10,242 Ns impulse, 235.2s delivered Isp, 4.44 kg propellant mass (89% of Project 06 assumption), peak 9.82 MPa, 76.82% volume loading. Burn time delta vs Project 06 (2s vs 15s) documented as physical packaging constraint — maximum web thickness in 84mm grain limits burn duration to ~2s at realistic HTPB/AP/Al regression rates. Nozzle Ae/A* reduced from Project 03's 16.67 to 5.76 due to 100mm body tube OD constraint (Project 04).
+
+**Tools:** Onshape, openMotor v0.6.1
+
 ---
 
 ### 08 · GNC / Monte Carlo Engagement Analysis
@@ -300,7 +323,14 @@ Proportional navigation guidance law implementation, 500-run Monte Carlo engagem
 
 **Tools:** Python (NumPy, SciPy, Matplotlib)
 
-**Key result:** 35.7m miss distance against a stationary target at 2500m range, 500m altitude. Peak Mach 1.67, 14.4s flight time, CPA altitude 512m. TPN and HYBRID (TPN+OGL) guidance modes produce identical results — confirmed the residual miss is a kinematic floor, not a guidance or control quality problem. LQR tracks desired attitude to within 1° throughout the engagement. 17 validation tests across all subsystems pass.
+**Key result:** 35.6m miss distance against a stationary target at 2500m range,
+500m altitude. Peak Mach 1.67, 14.4s flight time, CPA altitude 512m. TPN and
+HYBRID (TPN+OGL) guidance modes produce identical results — confirmed the residual
+miss is a kinematic floor, not a guidance or control quality problem. LQR tracks
+desired attitude to within 1° throughout the engagement. 17 validation tests across
+all subsystems pass. Bayesian optimization over 1112 trials confirmed manual result —
+best found 35.6m (0.1m improvement, within noise). guidance_clamp accounts for 97%
+of miss distance variance; LQR Q/R weights collectively <1%.
 
 **Controller architecture:**
 - Quaternion kinematics replacing Euler angles (eliminates gimbal lock)
@@ -314,63 +344,82 @@ Proportional navigation guidance law implementation, 500-run Monte Carlo engagem
 
 ---
 
-### 10 · Three-Loop Acceleration Autopilot *(in progress)*
+### 10 · Three-Loop Acceleration Autopilot
 
-Industry-standard three-loop missile autopilot: inner angular rate loop, middle body acceleration loop, outer guidance loop. Directly comparable to the LQR from Project 09 on the same engagement geometry. Designed to demonstrate the physically grounded alternative to optimal control that appears in real tactical missile programs.
+Industry-standard three-loop missile autopilot: inner angular rate loop (PD),
+middle body acceleration loop (PI), outer TPN guidance loop from Project 08.
+Directly comparable to the LQR from Project 09 on the same engagement geometry.
+Demonstrates the physically grounded alternative to optimal control used in real
+tactical missile programs — accelerometer and rate gyro feedback only, no full
+state information.
 
-**Planned architecture:**
-- Inner loop: rate gyro feedback, fin command shaping
-- Middle loop: accelerometer feedback, normal acceleration tracking
-- Outer loop: guidance acceleration demand from TPN/OGL
-- Gain scheduling vs dynamic pressure and Mach
-- Direct comparison against Project 09 LQR miss distance
+**Tools:** Python (NumPy, SciPy, Matplotlib), Optuna
 
-**Tools:** Python (NumPy, SciPy, Matplotlib)
+**Key result:** 58.6m miss distance against a stationary target at 2500m range,
+500m altitude. LQR baseline (Project 09): 35.7m. Miss distance gap is physically
+expected — LQR has full state information and globally optimal gains; the three-loop
+has only body acceleration and rate feedback.
 
----
+**Bayesian optimization:** 1707 trials, Optuna TPE, SQLite persistence. Three
+parameters account for 100% of variance: Kp_rate (50%), OMEGA_CMD_MAX (37%),
+Kd_rate (13%). All scheduling parameters, roll gain, and Ki_a have ~0% importance.
+Roll stabilization confirmed as a physical floor — at 120+ deg/s roll rate, fin
+authority is insufficient to arrest roll regardless of gain tuning (requires
+|Kp_roll| < 0.167 to avoid saturation, providing negligible corrective torque).
 
-### 11 · IR/RF Seeker Model *(in progress)*
+**Controller architecture:**
+- Inner loop: rate loop (PD) — angular rate feedback → fin deflection
+- Middle loop: acceleration loop (PI, leaky integrator) — body accel feedback → rate command
+- Outer loop: TPN guidance (unchanged from Project 08)
+- Gain scheduling inversely proportional to dynamic pressure
+- Roll stabilization fixed at nominal (not scheduled) — Kp_roll = -0.02
 
-Seeker model with gimbal dynamics, track loop, noise sources (thermal noise, glint, clutter), and seeker saturation. Closes the gap in the current pipeline where perfect LOS measurement is assumed. Feeds directly into the Project 08/09 guidance laws to replace the ideal sensor.
-
-**Planned architecture:**
-- Gimbal dynamics (rate loop, position limits, slew rate)
-- Track loop (proportional-integral LOS rate estimator)
-- Noise model (additive Gaussian + glint at short range)
-- Seeker saturation and lock-loss detection
-- Monte Carlo over seeker noise — Pk vs noise floor curves
-
-**Tools:** Python (NumPy, SciPy, Matplotlib)
-
----
-
-### 12 · Fragmentation Lethality Model *(in progress)*
-
-Warhead fragmentation model using Gurney equation for initial fragment velocity and Mott distribution for fragment count and mass. Computes lethal area as a function of miss distance and target vulnerability. Ties the 35.7m miss distance from Project 09 to an actual probability of kill number, closing the kill chain from launch through lethality assessment.
-
-**Planned architecture:**
-- Gurney equation: fragment velocity vs charge-to-metal ratio
-- Mott distribution: fragment count and mass statistics
-- Fragment pattern: spatial distribution vs fuze delay and intercept geometry
-- Target vulnerability model: presented area, vulnerable area fraction
-- Pk(miss distance) curve integrated with Project 09 engagement results
-
-**Tools:** Python (NumPy, SciPy, Matplotlib)
+**Final gains:**
+```
+Ka_nom      = 0.8     OMEGA_CMD_MAX = 1.5
+Ki_a_nom    = 0.45    INT_LEAKAGE   = 1.0
+Kp_rate_nom = -0.28   INT_CLIP      = 1.2
+Kd_rate_nom = 0.0     SCALE_MIN     = 0.6
+Kp_roll_nom = -0.02   SCALE_MAX     = 2.5
+```
 
 ---
 
-### 13 · Launch Envelope Calculator *(in progress)*
 
-Given target kinematics (speed, heading, altitude, maneuver capability), compute the valid launch zone with Pk contours. Extends the single-trajectory analysis of Projects 08/09 to a full engagement envelope. Standard deliverable in missile systems engineering — shows where a shooter must be to achieve a required Pk against a defined target.
+### 11 · IR/RF Seeker Model
 
-**Planned architecture:**
-- Target state parameterization (speed, heading, altitude, g-load)
-- Launch geometry sweep (range, bearing, altitude differential)
-- Per-geometry engagement simulation using Projects 08/09 pipeline
-- Pk contour generation using Project 12 lethality model
-- No-escape zone (NEZ) and favorable engagement zone (FEZ) boundaries
+Two-axis gimbaled seeker with PI track loop, physically-grounded noise model (Gaussian LOS rate + range-scaled glint + radome boresight error + ECM spoofing), range estimator with ECM bias injection, persistent track-loop slip, and lock-loss detection with sticky reacquire. Replaces the ideal sensor assumption in Project 09 attitude_sim with a one-line swap. 50-run Monte Carlo quantifies miss distance impact across four sensor error regimes.
 
-**Tools:** Python (NumPy, SciPy, Matplotlib)
+**Tools:** Python (NumPy, Matplotlib)
+
+**Key result:** TPN with LQR attitude control exhibits a kinematic miss-distance floor of 35.6m robust to zero-mean seeker noise up to 0.02 rad/s. Seeker degradation manifests as increased miss-distance variance (σ: 0 → 1.1m under noise → 6.8m under ECM) rather than shifted mean miss — a structural property of TPN, where unbiased angular measurements produce symmetric miss distributions around the kinematic floor. Only persistent bias error modes shift the mean: ECM spoofing reaches 2% Pk as favorable bias realizations drive the missile inside 20m lethal radius. 8/8 validation tests pass. Engineering implication: seeker specs should prioritize bias minimization (radome calibration, thermal stability) over noise floor reduction, and counter-ECM has higher priority than counter-jamming for this class of missile.
+
+**arXiv tie-in:** ECM spoofing based on Andersson & Dán, *Active Bayesian Inference for Robust Control under Sensor False Data Injection Attacks* (arXiv:2604.11410).
+
+
+---
+
+### 12 · Fragmentation Lethality Model
+
+Physics-based fragmentation warhead lethality model closing the end-to-end kill chain from seeker-guided engagement (Project 11) through system-level kill probability. Gurney equation for fragment launch velocity, Mott distribution for fragment mass statistics (B=0.68, mu=0.30g, N=5000), spherical spreading with beam geometry for spatial density, aerodynamic drag decay, and cookie-cutter vulnerability model (80 J KE threshold per Catovic 2022). System Pk computed as E[Pk(r)] over empirical miss distance distributions loaded from Project 11 seeker Monte Carlo. Sensitivity analysis on C/M ratio and target vulnerable area fraction.
+
+**Tools:** Python (NumPy, Matplotlib)
+
+**Key result:** Lethal radius 11.1m (Pk=0.5) for a 4.5kg warhead (3.0kg case, 1.5kg Comp B, C/M=0.500) against an aerial target with 8m^2 presented area and 25% vulnerable fraction. Pk(10m)=0.575, Pk(20m)=0.167, Pk(30m)=0.068. System Pk from Project 11 seeker MC: ideal sensor 0.044, base noise 0.045, noise+glint 0.045, ECM spoofing 0.018. ECM halves system Pk relative to ideal — confirms Project 11 finding that persistent bias is the dominant sensor degradation mode at the system level. 10/10 validation tests pass.
+
+**References:** Gurney (BRL 405, 1943), Mott (Proc. Royal Soc. A, 1947), Catovic & Kljuno (J. Defence Modeling & Simulation, 2022), Heininen (2022), Driels *Weaponeering* (AIAA, 2013).
+
+---
+
+### 13 · Launch Envelope Calculator
+
+Computes No-Escape Zone (NEZ) and Firing Envelope Zone (FEZ) boundaries for a missile against maneuvering and non-maneuvering targets across launch geometries. Simplified 3-DOF point-mass engagement model with TPN guidance sweeps range (500-6000m) x bearing (+/-180 deg) grid, computing Pk at each point via Project 12 lethality model. Polar Pk contour plots with NEZ/FEZ boundary extraction. Comparison between non-maneuvering and 3g maneuvering targets demonstrates envelope shrinkage under evasion.
+
+**Tools:** Python (NumPy, Matplotlib)
+
+**Key result:** 20x36 range-bearing grid, 3 MC seeds per point, two target configs (non-maneuvering, 3g). Maneuvering target shrinks FEZ boundary vs non-maneuvering as expected. 3-DOF miss distances (50-1000m) are larger than full 13-state pipeline (35.7m) due to simplified dynamics — documented as modeling choice for sweep speed. Full-fidelity production version would swap in Project 11 seeker_sim engagement model. 10/10 validation tests pass.
+
+**arXiv tie-in:** NEZ/FEZ boundary validation against Shekhawat & Sinha, *A Study of the Circular Pursuit Dynamics using Bifurcation Theoretic Computational Approach* (arXiv:2604.09065) — circular pursuit capture-to-limit-cycle transition provides analytical boundary conditions for numerically computed Pk contours
 
 ---
 
@@ -442,6 +491,7 @@ numpy>=1.24
 scipy>=1.10
 matplotlib>=3.7
 pandas>=2.0
+optuna>=3.6.0
 jupyter>=1.0
 pytest>=7.0
 pillow>=9.0

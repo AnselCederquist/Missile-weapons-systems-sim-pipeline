@@ -25,10 +25,14 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+print(sys.path)
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__),
     '..', '..', '04_missile_aero_database', 'postprocess'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__),
     '..', '..', '08_gnc_monte_carlo', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+    '..', '..', '09_attitude_control', 'src'))
 
 try:
     from aero_interpolator import AeroInterpolator
@@ -76,6 +80,10 @@ BETA_CLAMP_DEG       = 8.0
 AERO_ALPHA_CLAMP_DEG = 10.0
 GRAV_COMP_BELOW      = 1.0
 GRAV_COMP_ABOVE      = 0.0
+TAU_DES       = 0.2
+TPN_N         = 4.0
+TPN_ACCEL_LIM = 10.0
+TPN_NOISE_STD = 0.0
 
 # OGL parameters
 OGL_N           = 6.0    # navigation constant (higher = more aggressive)
@@ -348,7 +356,6 @@ def run_attitude_sim(
 
     t             = 0.0
     CONTROL_START = 2.0
-    TAU_DES       = 0.2
     euler_smooth  = np.array([0.0, launch_angle, 0.0])
     euler_des     = np.array([0.0, launch_angle, 0.0])
     hit           = False
@@ -574,7 +581,11 @@ def plot_results(result, save_dir=None, title_suffix=''):
 # ---------------------------------------------------------------
 
 if __name__ == '__main__':
-    RESULTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'results', 'figures')
+    # Force Project 09 folder
+    RESULTS_DIR = os.path.join(
+        os.path.dirname(__file__), '..', '..', '09_attitude_control', 'results', 'figures'
+    )
+    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     # ---- OGL run ----
     print("\n" + "="*60)
